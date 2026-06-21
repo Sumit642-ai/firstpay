@@ -1,0 +1,60 @@
+@use "scss/abstract" as *;
+@use "scss/base" as *;
+@use "scss/components" as *;
+@use "scss/layouts" as *;
+@use "scss/pages" as *;
+@use "scss/utility" as *;
+
+.ck.ck-icon {
+    width: $fs20 !important;
+    height: $fs20 !important;
+}
+
+.ck.ck-toolbar {
+    border: none !important;
+}
+
+.ck.ck-button,
+a.ck.ck-button {
+    min-width: $fs10 !important;
+    min-height: $fs10 !important;
+}
+
+.ck-editor {
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+
+    &__top {
+        height: auto;
+    }
+
+    &__main {
+        flex-grow: 1;
+        overflow-y: auto;
+
+        &>* {
+            height: 100%;
+            font-size: $fs18;
+        }
+
+        &> {
+
+            .ck-editor__editable:not(.ck-focused),
+            .ck-editor__editable.ck-blurred {
+                box-shadow: none !important;
+                border: none !important;
+                border-top: 1px solid $bd-gray !important;
+            }
+
+            .ck.ck-content.ck-editor__editable.ck-rounded-corners.ck-editor__editable_inline.ck-focused {
+                box-shadow: none !important;
+                border: 1px solid $bd-gray !important;
+            }
+        }
+    }
+
+    .ck.ck-dropdown .ck-dropdown__arrow {
+        width: $fs10 !important;
+    }
+}

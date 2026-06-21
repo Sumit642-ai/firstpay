@@ -1,0 +1,166 @@
+@use "../abstract/colors" as *;
+@use "../abstract/variables" as *;
+
+.fileUploadedSuccessModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(17, 17, 17, 0.39);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .modalInnerWrapper {
+        background-color: $white-100;
+        padding: $fs28 $fs28 $fs47;
+        border-radius: $fs15;
+        width: 35%;
+
+        .closeBtn {
+            display: block;
+            width: fit-content;
+            margin-left: auto;
+            border: none;
+            outline: none;
+            background-color: transparent;
+            width: $fs22;
+        }
+
+        .successIcon {
+            display: block;
+            margin: $fs29 auto $fs30;
+            width: $fs80;
+        }
+
+        h2 {
+            font-size: $fs26;
+            font-weight: 600;
+            color: $black-1D;
+            text-align: center;
+        }
+
+        h3 {
+            font-size: $fs18;
+            font-weight: 400;
+            color: $black-666;
+            text-align: center;
+            padding: $fs6 0 $fs40;
+        }
+
+        p {
+            font-size: $fs16;
+            font-weight: 400;
+            color: $black-666;
+            text-align: center;
+
+            span {
+                color: $black-111;
+            }
+        }
+    }
+}
+
+.documentsProcessingModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(17, 17, 17, 0.39);
+    z-index: 999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    .modalInnerWrapper {
+        background-color: $white-100;
+        padding: $fs28 $fs28 $fs47;
+        border-radius: $fs15;
+        width: 35%;
+
+        .processingModal {
+            width: 100%;
+
+            .loader-sm {
+                margin: $fs50 auto $fs30;
+            }
+
+            h3 {
+                font-size: $fs25;
+                font-weight: 700;
+                text-align: center;
+                color: $black-100;
+            }
+
+            p {
+                font-size: $fs20;
+                font-weight: 400;
+                color: $black-666;
+                padding-top: $fs30;
+                text-align: center;
+            }
+
+            display: none;
+
+            &.active {
+                display: block;
+            }
+        }
+
+        .processCompletedModal {
+
+            .closeBtn {
+                display: block;
+                margin-left: auto;
+                border: none;
+                outline: none;
+                background-color: transparent;
+                width: $fs25;
+            }
+
+            .successIcon {
+                width: $fs80;
+                margin: $fs25 auto;
+            }
+
+            h3 {
+                font-size: $fs25;
+                font-weight: 700;
+                text-align: center;
+                color: $black-100;
+            }
+
+            h6 {
+                font-size: $fs18;
+                font-weight: 400;
+                color: $black-666;
+                padding: $fs10 0 $fs50;
+                text-align: center;
+            }
+
+            p {
+                font-size: $fs16;
+                font-weight: 400;
+                color: $black-666;
+                text-align: center;
+
+                span {
+                    color: $black-111;
+                }
+            }
+
+            display: none;
+
+            &.active {
+                display: block;
+            }
+        }
+    }
+
+    &.active {
+        display: block;
+    }
+}

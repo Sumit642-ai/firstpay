@@ -1,0 +1,324 @@
+@use "../abstract/variables" as *;
+@use "../abstract/colors" as *;
+
+.mainContentWrapper {
+
+    .documentsTableSection {
+        width: 75%;
+        padding: $fs50;
+        border: 1px soli dred;
+
+        .tableHeaderContainer {
+            width: 100%;
+            padding-top: $fs50;
+
+            .tabOptionsContainer {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: $fs60;
+                border-bottom: 1px solid $bd-gray;
+
+                li {
+                    padding-bottom: $fs12;
+                    font-size: $fs16;
+                    font-weight: 400;
+                    color: $black-111;
+                    opacity: 0.5;
+                    position: relative;
+                    cursor: pointer;
+
+                    &::before {
+                        content: "";
+                        position: absolute;
+                        bottom: 0;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 100%;
+                        height: 4px;
+                        border-radius: 10px 10px 0 0;
+                        background-color: $primary-blue-100;
+                        display: none;
+                    }
+
+                    &.active {
+                        opacity: 1;
+                        color: $primary-blue-100;
+
+                        &::before {
+                            display: block;
+                        }
+                    }
+                }
+            }
+
+            .tableActionOptionsWrapper {
+                width: 100%;
+                padding: $fs25 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                .left {
+                    display: flex;
+                    align-items: center;
+                    gap: $fs10;
+
+                    button {
+                        outline: none;
+                        background-color: transparent;
+                        border: 1px solid $primary-blue-100;
+                        border-radius: 3px;
+                        padding: $fs12 $fs27;
+                        font-size: $fs16;
+                        font-weight: 400;
+                        color: $primary-blue-100;
+                        line-height: 1;
+
+                        &:nth-child(2) {
+                            background-color: $primary-blue-100;
+                            color: $white-100;
+                        }
+                    }
+                }
+
+                .right {
+
+                    ul {
+                        display: flex;
+                        align-items: center;
+                        gap: $fs28;
+
+                        li {
+
+                            display: flex;
+                            align-items: center;
+
+                            button {
+                                border: none;
+                                outline: none;
+                                background-color: transparent;
+                                width: $fs25;
+                                display: inline-flex;
+
+                                &.consolidateBtn {
+                                    outline: none;
+                                    background-color: transparent;
+                                    width: fit-content;
+                                    border: 1px solid $orange-100;
+                                    border-radius: 3px;
+                                    padding: $fs12;
+                                    color: $orange-100;
+                                    font-size: $fs16;
+                                    font-weight: 400;
+                                    line-height: 1;
+                                }
+                            }
+
+                            &.seperator {
+                                display: inline-block;
+                                margin-left: $fs12;
+                                height: $fs24;
+                                width: 1px;
+                                background-color: $bd-gray;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        .documentsTableWrapper {
+
+            table {
+                width: 100%;
+
+                input {
+                    outline: none;
+                    accent-color: $primary-blue-100;
+                }
+
+                thead,
+                tbody {
+                    width: 100%;
+                }
+
+                th {
+                    padding: $fs20 0;
+                    font-size: $fs13;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    color: $black-111;
+                    background-color: $gray-F5;
+
+                    &:nth-child(1) {
+                        padding-left: $fs30;
+                    }
+
+                    &:nth-child(6) {
+                        text-align: end;
+                    }
+
+                    &:nth-child(7) {
+                        padding-right: $fs30;
+                        text-align: end;
+                    }
+                }
+
+                td {
+                    font-size: $fs18;
+                    font-weight: 400;
+                    color: $black-666;
+                    padding: $fs14 0;
+                    border-bottom: 1px solid $bd-gray;
+
+                    .employeeDetail {
+                        h3 {
+                            font-size: $fs18;
+                            font-weight: 400;
+                            color: $black-666;
+                        }
+
+                        p {
+                            font-size: $fs14;
+                        }
+                    }
+
+                    .file {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: $fs16;
+
+                        img {
+                            width: $fs22;
+                        }
+
+                        .detail {
+                            h3 {
+                                font-size: $fs18;
+                                font-weight: 400;
+                                color: $black-666;
+                            }
+
+                            p {
+                                font-size: $fs14;
+                                font-weight: 400;
+                                color: $black-666;
+                            }
+                        }
+                    }
+
+                    .actionBtns {
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-end;
+                        gap: $fs13;
+
+                        button {
+                            outline: none;
+                            border: 1px solid $primary-blue-100;
+                            background-color: transparent;
+                            font-size: $fs16;
+                            font-weight: 400;
+                            color: $primary-blue-100;
+                            padding: $fs10 $fs21;
+                            border-radius: 3px;
+                            line-height: 1;
+
+                            &:nth-child(2) {
+                                background-color: $primary-blue-100;
+                                color: $white-100;
+                            }
+                        }
+                    }
+
+                    &:nth-child(1) {
+                        width: 7%;
+                        padding-left: $fs30;
+                    }
+
+                    &:nth-child(2) {
+                        width: 10%;
+                    }
+
+                    &:nth-child(3) {
+                        width: 15%;
+                    }
+
+                    &:nth-child(4) {
+                        width: 17%;
+                    }
+
+                    &:nth-child(5) {
+                        width: 18%;
+                    }
+
+                    &:nth-child(6) {
+                        width: 5%;
+                        text-align: end;
+                    }
+
+                    &:nth-child(7) {
+                        width: 28%;
+                        padding-right: $fs30;
+                    }
+
+                }
+            }
+        }
+
+        .paginationContainer {
+            width: 100%;
+            padding-top: $fs20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            p {
+                font-size: $fs16;
+                font-weight: 400;
+                color: $black-666;
+
+                span {
+                    font-weight: 700;
+                }
+            }
+
+            .paginationWrapper {
+                display: flex;
+                align-items: center;
+                gap: $fs14;
+
+                button {
+                    border: none;
+                    outline: none;
+                    background-color: transparent;
+                    width: $fs17;
+                    display: inline-flex;
+                }
+
+                ul {
+                    display: flex;
+                    align-items: center;
+                    gap: $fs10;
+
+                    li {
+                        padding: $fs13 $fs16;
+                        font-size: $fs16;
+                        font-weight: 400;
+                        color: $black-666;
+                        border-radius: $fs6;
+                        border: 1px solid $bd-gray;
+                        line-height: 1;
+                        cursor: pointer;
+
+                        &.active {
+                            background-color: $primary-blue-100;
+                            color: $white-100;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

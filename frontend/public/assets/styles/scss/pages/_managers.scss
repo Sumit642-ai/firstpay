@@ -1,0 +1,258 @@
+@use "../abstract/variables" as *;
+@use "../abstract/colors" as *;
+
+
+.mainContentWrapper {
+    .managerContentSection {
+        width: 68%;
+        padding: $fs50;
+
+        .managerTableContainer {
+            width: 65%;
+            padding: $fs50 0;
+
+            .tableInnerWrapper {
+
+                width: 100%;
+
+                table {
+                    width: 100%;
+
+                    thead,
+                    tbody {
+                        width: 100%;
+                    }
+
+                    th {
+                        padding: $fs20 0;
+                        background-color: $gray-F5;
+                        font-size: $fs14;
+                        font-weight: 700;
+                        color: $black-111;
+
+                        .actionBtnsWrapper {
+                            display: flex;
+                            align-items: center;
+                            justify-content: flex-end;
+                            gap: $fs25;
+
+                            button {
+                                border: none;
+                                outline: none;
+                                background-color: transparent;
+                                width: $fs20;
+                                display: inline-flex;
+                            }
+                        }
+
+                        &:nth-child(1) {
+                            padding-left: $fs25;
+                        }
+
+                        &:nth-child(3) {
+                            padding-right: $fs25;
+                        }
+
+                    }
+
+                    td {
+                        padding: $fs18 0;
+                        border-bottom: 1px solid $bd-gray;
+
+                        .profile {
+                            display: flex;
+                            align-items: center;
+                            gap: $fs17;
+
+                            img {
+                                width: $fs45;
+                            }
+
+                            .detail {
+                                h3 {
+                                    font-size: $fs18;
+                                    font-weight: 400;
+                                    color: $black-111;
+                                }
+
+                                p {
+                                    font-size: $fs14;
+                                    font-weight: 400;
+                                    color: $black-666;
+                                }
+                            }
+                        }
+
+                        &:has(.mail) {
+                            text-align: end;
+
+                            a {
+                                font-size: $fs14;
+                                font-weight: 400;
+                                color: $black-666;
+                                text-decoration: none;
+                                pointer-events: none;
+                            }
+                        }
+
+                        &:nth-child(1) {
+                            padding-left: $fs25;
+                            width: 12%;
+                        }
+
+
+                        &:nth-child(2) {
+                            width: 48%;
+                        }
+
+                        &:nth-child(3) {
+                            width: 40%;
+                            padding-right: $fs25;
+                        }
+                    }
+                }
+            }
+        }
+
+        .footer {
+            width: 65%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            p {
+                font-size: $fs14;
+                font-weight: 400;
+                color: $black-666;
+
+                span {
+                    font-weight: 700;
+                }
+            }
+
+            .paginationContainer {
+                display: flex;
+                align-items: center;
+                gap: $fs12;
+
+                button {
+                    border: none;
+                    outline: none;
+                    background-color: transparent;
+                    width: $fs14;
+                    display: inline-flex;
+                }
+
+                ul {
+                    display: flex;
+                    align-items: center;
+                    gap: $fs10;
+
+                    li {
+                        font-size: $fs14;
+                        font-weight: 400;
+                        color: $black-666;
+                        border-radius: $fs6;
+                        padding: $fs10 $fs12;
+                        border: 1px solid $gray-D9;
+                        line-height: 1;
+                        cursor: pointer;
+
+                        &.active {
+                            border: 1px solid $primary-blue-100;
+                            background-color: $primary-blue-100;
+                            color: $white-100;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .sendMailsection {
+        background-color: $gray-F9;
+        width: 32%;
+        height: 100%;
+        overflow-y: auto;
+        padding: $fs70 $fs50 $fs50;
+
+        .header {
+            h3 {
+                font-size: $fs30;
+                font-weight: 400;
+                color: black;
+            }
+
+            p {
+                font-size: $fs15;
+                font-weight: 400;
+                color: $black-666;
+            }
+        }
+
+        .chipsWrapper {
+            width: 100%;
+            padding: $fs50 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 7px;
+
+            li {
+                display: flex;
+                align-items: center;
+                gap: $fs12;
+                width: fit-content;
+                border-radius: $fs100;
+                border: 1px solid $gray-D9;
+                padding: 7px $fs15;
+
+                span {
+                    font-size: $fs12;
+                    font-weight: 400;
+                    color: $black-1D;
+                    line-height: 1;
+                }
+
+                button {
+                    border: none;
+                    outline: none;
+                    background-color: transparent;
+                    width: $fs10;
+                    display: inline-flex;
+                }
+            }
+        }
+
+        .mainInputContainer {
+            width: 100%;
+
+            .inputBoxContainer {
+                width: 100%;
+                background-color: $white-100;
+                border-radius: $fs11;
+                border: 1px solid $gray-D9;
+                margin-bottom: $fs16;
+                padding: $fs14 $fs24;
+                height: calc($fs100 * 3.5);
+                min-height: calc($fs100 * 3.5);
+            }
+
+
+            .sendBtn {
+                display: block;
+                width: fit-content;
+                margin-left: auto;
+                border: none;
+                outline: none;
+                background-color: transparent;
+                padding: $fs6 $fs23;
+                font-size: $fs16;
+                font-weight: 400;
+                color: $white-100;
+                background-color: $orange-100;
+                border-radius: 3px;
+            }
+        }
+    }
+}

@@ -1,0 +1,59 @@
+@use "../abstract/variables" as *;
+@use "../abstract/colors" as *;
+
+.w-screen {
+    width: 100dvw;
+}
+
+.h-screen {
+    height: 100dvh;
+}
+
+.bd {
+    border: 1px solid red;
+}
+
+.orange-btn {
+    background-color: $orange-100 !important;
+    color: $white-100 !important;
+}
+
+.mainHeading {
+    font-size: $fs30;
+    font-weight: 700;
+    padding-bottom: $fs3;
+}
+
+.subHeading {
+    font-size: $fs22;
+    font-weight: 400;
+}
+
+.customScrollbar::-webkit-scrollbar {
+    width: $fs6;
+    height: $fs6;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.075);
+}
+
+.customScrollbar::-webkit-scrollbar-track {
+    background-color: rgba(128, 128, 128, 0.05);
+}
+
+.loader-sm {
+    width: $fs80;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: $fs8 solid rgba($color: $gray-D9, $alpha: 0.5);
+    border-right-color: $orange-100;
+    animation: l2 1s infinite linear;
+    position: relative;
+}
+
+@keyframes l2 {
+    to {
+        transform: rotate(1turn)
+    }
+}

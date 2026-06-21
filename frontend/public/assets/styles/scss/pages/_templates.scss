@@ -1,0 +1,143 @@
+@use "../abstract/colors" as *;
+@use "../abstract/variables" as *;
+
+.mainContentWrapper {
+
+    .templatesContentSection {
+        width: 68%;
+        padding: $fs50;
+
+        .templatesTableWrapper {
+            width: 60%;
+            padding: $fs50 0;
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+
+                input[type=checkbox] {
+                    outline: none;
+                    background-color: transparent;
+                    accent-color: $primary-blue-100;
+                }
+
+                th {
+                    font-size: $fs14;
+                    font-weight: 700;
+                    color: $black-111;
+                    text-transform: uppercase;
+                    padding: $fs17 0;
+                    background-color: $gray-F5;
+
+                    .actionBtnsWrapper {
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-end;
+                        gap: $fs25;
+
+                        button {
+                            border: none;
+                            outline: none;
+                            background-color: transparent;
+                            width: $fs21;
+
+                            &:nth-child(2) {
+                                width: $fs28;
+                            }
+                        }
+                    }
+
+                    &:nth-child(1) {
+                        padding-left: $fs30;
+                    }
+
+                    &:nth-child(3) {
+                        padding-right: $fs30;
+                    }
+                }
+
+                td {
+
+                    border-bottom: 1px solid $bd-gray;
+                    padding: $fs40 0 $fs30;
+
+                    .templateRowContent {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: $fs30;
+
+                        img {
+                            width: $fs60;
+                        }
+
+                        .detail {
+                            h3 {
+                                font-size: $fs24;
+                                font-weight: 400;
+                                color: $black-111;
+                                padding-bottom: $fs6;
+                            }
+
+                            p {
+                                font-size: $fs15;
+                                font-weight: 400;
+                                color: $black-666;
+                            }
+                        }
+                    }
+
+                    .downloadBtn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-end;
+                        gap: 5px;
+                        text-decoration: none;
+                        font-size: $fs20;
+                        font-weight: 400;
+                        color: $black-111;
+
+                        img {
+                            width: $fs25;
+                        }
+                    }
+
+                    &:nth-child(1) {
+                        width: 9%;
+                        padding-left: $fs30;
+                        vertical-align: top;
+
+                        .checkBoxWrapper {
+                            display: flex;
+                            align-items: flex-start;
+
+                            input {
+                                align-self: flex-start;
+                            }
+                        }
+                    }
+
+                    &:nth-child(2) {
+                        width: 65%;
+                    }
+
+                    &:nth-child(3) {
+                        width: 26%;
+                        padding-right: $fs30;
+                    }
+                }
+
+                tr {
+                    &:nth-child(2) {
+                        td {
+                            .templateRowContent {
+                                img {
+                                    transform: scale(1.3);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
