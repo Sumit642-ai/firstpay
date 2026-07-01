@@ -256,17 +256,11 @@ const Dashboard: React.FC = () => {
       updateActiveUpload({ message: 'Approver List is mandatory.' });
       return;
     }
-    if (!activeUpload.emailFile) {
-      updateActiveUpload({ message: 'Approved Email file is mandatory.' });
-      return;
-    }
-
     const formData = new FormData();
     formData.append('templateFile', activeUpload.file!);
     formData.append('documentType', activeTab);
     formData.append('approver', activeUpload.approver);
     formData.append('process', activeUpload.process);
-    formData.append('emailFile', activeUpload.emailFile);
     
     updateActiveUpload({ message: 'Submitting request...' });
 
@@ -357,7 +351,6 @@ const Dashboard: React.FC = () => {
                       <th>Status</th>
                       <th>Remarks</th>
                       <th>Template</th>
-                      <th>Email</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -399,17 +392,11 @@ const Dashboard: React.FC = () => {
                             <span>Download</span>
                           </a>
                         </td>
-                        <td className="tdChkTickData">
-                          <a download href={row.emailUrl} className="downloadBtn">
-                            <img src="/assets/images/templates/download_orange.png" className="dload" alt="" />
-                            <span>Download</span>
-                          </a>
-                        </td>
                       </tr>
                     ))}
                     {rows.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="empty-table-cell">
+                        <td colSpan={5} className="empty-table-cell">
                           No uploads found.
                         </td>
                       </tr>
@@ -590,60 +577,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="upload-field" style={{ width: '100%', maxWidth: '100%', marginTop: '16px' }}>
-                    <label>2. Attach Approved Email (.msg/.eml) <span style={{ color: 'red' }}>*</span></label>
-                    <button
-                      className="inputBox upload-dropzone"
-                      type="button"
-                      onClick={() => emailInputRef.current?.click()}
-                      style={{ minHeight: '120px', padding: '16px 20px', width: '100%' }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const file = event.dataTransfer.files?.[0] ?? null;
-                        if (file) {
-                          const name = file.name.toLowerCase();
-                          if (name.endsWith('.msg') || name.endsWith('.eml')) {
-                            updateActiveUpload({ emailFile: file, message: '' });
-                          } else {
-                            updateActiveUpload({ message: 'Only .msg or .eml files are allowed.' });
-                          }
-                        }
-                      }}
-                      onDragOver={(event) => event.preventDefault()}
-                    >
-                      <span className="uploadIcon" style={{ height: '42px', width: '42px' }}>
-                        <img src="/assets/images/dashboard/upload.png" alt="" style={{ height: '20px', width: '20px' }} />
-                      </span>
-                      <span className="upload-dropzone-title" style={{ fontSize: '14px' }}>
-                        <strong>Choose Approved Email</strong> or drag and drop it here.
-                      </span>
-                      <span className="upload-dropzone-help">.msg / .eml formats accepted only</span>
-                    </button>
-                    <input
-                      ref={emailInputRef}
-                      className="d-none"
-                      type="file"
-                      accept=".msg,.eml"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-                        if (file) {
-                          const name = file.name.toLowerCase();
-                          if (name.endsWith('.msg') || name.endsWith('.eml')) {
-                            updateActiveUpload({ emailFile: file, message: '' });
-                          } else {
-                            updateActiveUpload({ message: 'Only .msg or .eml files are allowed.' });
-                          }
-                        }
-                      }}
-                    />
 
-                    {activeUpload.emailFile && (
-                      <div className="upload-selected-file" style={{ width: '100%', marginTop: '12px' }}>
-                        <span>Selected Email:</span>
-                        <strong>{activeUpload.emailFile.name}</strong>
-                      </div>
-                    )}
-                  </div>
  
                   <div className="upload-review">
                     <p>
