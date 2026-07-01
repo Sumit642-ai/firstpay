@@ -5,7 +5,7 @@
       "destination": "https://headstone-lard-remote.ngrok-free.dev/api/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api|DownloadTemplates|assets|favicon|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
