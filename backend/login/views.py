@@ -269,6 +269,97 @@ def execute_dataset_proc(proc_name, params):
         conn.close()
 
 
+def user_can_view_row(item, request):
+    role_id = str(request.session.get('RoleID') or '1')
+    login_id = str(request.session.get('LoginID') or '')
+    domain_id = str(request.session.get('DomainId') or login_id)
+    emp_name = str(request.session.get('EmployeeName') or '')
+    email_id = str(request.session.get('EmailId') or '')
+    
+    # 1. Admin (Role 2) can see everything
+    if role_id == '2':
+        return True
+        
+    # 2. Approver (Role 3) can only see rows where they are the designated approver
+    if role_id == '3':
+        approver_name_db = item.get('approverName') or ''
+        if not approver_name_db:
+            return False
+            
+        def normalize(val):
+            return str(val).strip().lower()
+            
+        norm_db = normalize(approver_name_db)
+        norm_name = normalize(emp_name)
+        norm_domain = normalize(domain_id)
+        norm_email = normalize(email_id)
+        
+        # If any matches or is contained
+        if (norm_name and (norm_name in norm_db or norm_db in norm_name)) or \
+           (norm_domain and (norm_domain in norm_db or norm_db in norm_domain)) or \
+           (norm_email and (norm_email in norm_db or norm_db in norm_email)):
+            return True
+            
+        return False
+        
+    # 3. User (Role 1) can only see rows they uploaded
+    item_user = str(item.get('userId') or '').strip().lower()
+    if item_user:
+        if item_user == domain_id.strip().lower() or item_user == login_id.strip().lower():
+            return True
+    return False
+
+
+def verify_user_can_modify_logs(log_ids, request):
+    role_id = str(request.session.get('RoleID') or '1')
+    if role_id == '2': # Admin can modify anything
+        return True
+        
+    if role_id == '1': # User cannot modify/approve/reject anything
+        return False
+        
+    if role_id == '3': # Approver can only modify logs where they are the designated approver
+        if not log_ids:
+            return True
+            
+        login_id = str(request.session.get('LoginID') or '')
+        domain_id = str(request.session.get('DomainId') or login_id)
+        emp_name = str(request.session.get('EmployeeName') or '')
+        email_id = str(request.session.get('EmailId') or '')
+        
+        log_ids_str = ', '.join(str(int(lid)) for lid in log_ids)
+        conn = get_payroll_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT LogId, Approver FROM tbl_UploadSuccessLog WHERE LogId IN ({log_ids_str})")
+            rows = cursor.fetchall()
+            
+            def normalize(val):
+                return str(val).strip().lower()
+                
+            norm_name = normalize(emp_name)
+            norm_domain = normalize(domain_id)
+            norm_email = normalize(email_id)
+            
+            for log_id, approver_db in rows:
+                if not approver_db:
+                    return False
+                norm_db = normalize(approver_db)
+                matched = (norm_name and (norm_name in norm_db or norm_db in norm_name)) or \
+                          (norm_domain and (norm_domain in norm_db or norm_db in norm_domain)) or \
+                          (norm_email and (norm_email in norm_db or norm_db in norm_email))
+                if not matched:
+                    return False
+            return True
+        except Exception as e:
+            logging.error(f"Error verifying approver write access: {e}")
+            return False
+        finally:
+            conn.close()
+            
+    return False
+
+
 def get_uploaded_files_payload(action, request, include_consolidated=False):
     login_id = get_session_login_id(request)
     domain_id = str(request.session.get('DomainId') or login_id)
@@ -315,7 +406,13 @@ def get_uploaded_files_payload(action, request, include_consolidated=False):
     else:
         for set_index, rows in enumerate(result_sets[:3]):
             append_upload_rows(groups, rows, set_index * 1000, log_details)
-    return groups
+            
+    # Apply row-level visibility filtering
+    filtered_groups = {}
+    for key, items in groups.items():
+        filtered_groups[key] = [item for item in items if user_can_view_row(item, request)]
+        
+    return filtered_groups
 
 
 def build_dashboard_fixture():
@@ -1278,6 +1375,9 @@ def admin_approve(request):
         return JsonResponse({'success': False, 'message': 'No records selected.'}, status=400)
         
     log_ids = [int(row['id']) for row in rows]
+    if not verify_user_can_modify_logs(log_ids, request):
+        return JsonResponse({'success': False, 'message': 'Permission denied.'}, status=403)
+        
     role_id = request.session.get('RoleID') or '2'
     domain_id = request.session.get('DomainId') or 'system'
     doc_code = DOCUMENT_TYPE_MAP.get(action_name.lower()) or action_name.upper()
@@ -1306,6 +1406,9 @@ def admin_reject(request):
         return JsonResponse({'success': False, 'message': 'Comments are required for rejection.'}, status=400)
         
     log_ids = [int(row['id']) for row in rows]
+    if not verify_user_can_modify_logs(log_ids, request):
+        return JsonResponse({'success': False, 'message': 'Permission denied.'}, status=403)
+        
     role_id = request.session.get('RoleID') or '2'
     domain_id = request.session.get('DomainId') or 'system'
     doc_code = DOCUMENT_TYPE_MAP.get(action_name.lower()) or action_name.upper()
