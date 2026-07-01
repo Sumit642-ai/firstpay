@@ -706,24 +706,29 @@ def submit_upload(request):
                 try:
                     import re
                     approver_label = request.POST.get('approver')
-                    approver_email = ''
+                    approver_name = ''
                     if approver_label:
+                        approver_name = approver_label.split(' - ')[0].strip()
                         match = re.search(r'[\w\.-]+@[\w\.-]+', approver_label)
                         if match:
                             approver_email = match.group(0).strip().lower()
-                    if approver_email:
-                        approver_login = ''
-                        emp_app = EmployeeMaster.objects.filter(employee_email_id=approver_email, deleted_status=False).first()
-                        if emp_app:
-                            approver_login = emp_app.domain_id
-                        if not approver_login:
-                            approver_login = approver_email or approver_label
-                        
-                        with connection.cursor() as cursor:
-                            cursor.execute(
-                                "UPDATE tbl_UploadSuccessLog SET Approver = %s WHERE LogId = %s",
-                                [approver_login, int(request_id)]
+                            emp_app = EmployeeMaster.objects.filter(employee_email_id=approver_email, deleted_status=False).first()
+                            if emp_app and emp_app.employee_name:
+                                approver_name = emp_app.employee_name.strip()
+                    
+                    if approver_name:
+                        payroll_conn = get_payroll_connection()
+                        try:
+                            payroll_cursor = payroll_conn.cursor()
+                            payroll_cursor.execute(
+                                "UPDATE tbl_UploadSuccessLog SET Approver = ? WHERE LogId = ?",
+                                [approver_name, int(request_id)]
                             )
+                            payroll_conn.commit()
+                        except Exception as db_err:
+                            logging.error(f"SQL Server update error for Approver: {db_err}")
+                        finally:
+                            payroll_conn.close()
                 except Exception as app_err:
                     logging.error(f"Error updating Approver column: {app_err}")
 
