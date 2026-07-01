@@ -1,0 +1,19 @@
+# Node/React
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+frontend/tsconfig.tsbuildinfo
+
+# Python/Django
+backend/__pycache__/
+backend/**/*.pyc
+backend/.venv/
+backend/db.sqlite3
+backend/UploadFiles/
+backend/Content/MergedFiles/
+
+# Editor/OS
+.vs/
+.vscode/
+.DS_Store
+Thumbs.db
