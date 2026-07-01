@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'firstpay-phase-2-dev-key'
 DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '.vercel.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '.vercel.app', '.onrender.com']
 
 INSTALLED_APPS = [
     'corsheaders',

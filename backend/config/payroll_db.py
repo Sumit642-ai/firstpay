@@ -13,22 +13,24 @@ UAT (commented in Web.config — switch USE_UAT_DB = True to enable):
   Password=ICICI1src
 """
 
-USE_UAT_DB = False
+import os
+
+USE_UAT_DB = os.environ.get('USE_UAT_DB', 'False').lower() == 'true'
 
 LOCAL = {
-    'SERVER': r'LAPTOP-14DRA4H6\TEW_SQLEXPRESS',
-    'DATABASE': 'Payroll_Automation',
-    'USER': '',
-    'PASSWORD': '',
-    'TRUSTED_CONNECTION': 'yes',
+    'SERVER': os.environ.get('DB_SERVER', r'LAPTOP-14DRA4H6\TEW_SQLEXPRESS'),
+    'DATABASE': os.environ.get('DB_DATABASE', 'Payroll_Automation'),
+    'USER': os.environ.get('DB_USER', ''),
+    'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+    'TRUSTED_CONNECTION': os.environ.get('DB_TRUSTED_CONNECTION', 'yes'),
 }
 
 UAT = {
-    'SERVER': '192.168.96.112',
-    'DATABASE': 'Payroll_Automation_UAT',
-    'USER': 'Payroll_Users',
-    'PASSWORD': 'ICICI1src',
-    'TRUSTED_CONNECTION': 'no',
+    'SERVER': os.environ.get('DB_SERVER_UAT', '192.168.96.112'),
+    'DATABASE': os.environ.get('DB_DATABASE_UAT', 'Payroll_Automation_UAT'),
+    'USER': os.environ.get('DB_USER_UAT', 'Payroll_Users'),
+    'PASSWORD': os.environ.get('DB_PASSWORD_UAT', 'ICICI1src'),
+    'TRUSTED_CONNECTION': os.environ.get('DB_TRUSTED_CONNECTION_UAT', 'no'),
 }
 
 DRIVER = 'ODBC Driver 17 for SQL Server'
