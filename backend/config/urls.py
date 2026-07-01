@@ -20,7 +20,11 @@ urlpatterns = [
     path('api/', include('login.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static('/UploadFiles/', document_root=settings.BASE_DIR / 'UploadFiles')
-    urlpatterns += static('/DownloadTemplates/', document_root=settings.BASE_DIR / 'DownloadTemplates')
-    urlpatterns += static('/Content/MergedFiles/', document_root=settings.BASE_DIR / 'Content' / 'MergedFiles')
+from django.views.static import serve
+from django.urls import re_path
+
+urlpatterns += [
+    re_path(r'^UploadFiles/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'UploadFiles'}),
+    re_path(r'^DownloadTemplates/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'DownloadTemplates'}),
+    re_path(r'^Content/MergedFiles/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'Content' / 'MergedFiles'}),
+]

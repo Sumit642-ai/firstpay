@@ -5,7 +5,15 @@
       "destination": "https://headstone-lard-remote.ngrok-free.dev/api/$1"
     },
     {
-      "source": "/((?!api|DownloadTemplates|assets|favicon|.*\\.).*)",
+      "source": "/UploadFiles/(.*)",
+      "destination": "https://headstone-lard-remote.ngrok-free.dev/UploadFiles/$1"
+    },
+    {
+      "source": "/Content/MergedFiles/(.*)",
+      "destination": "https://headstone-lard-remote.ngrok-free.dev/Content/MergedFiles/$1"
+    },
+    {
+      "source": "/((?!api|UploadFiles|Content|DownloadTemplates|assets|favicon|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
