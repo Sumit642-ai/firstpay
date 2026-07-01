@@ -360,6 +360,14 @@ const AdminReport: React.FC = () => {
                             title={row.remarks}
                             alt="Comments"
                             className="comment-trigger"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                              if (row.remarks) {
+                                alert(`Remarks:\n${row.remarks}`);
+                              } else {
+                                alert("No remarks found.");
+                              }
+                            }}
                           />
                         </td>
                         <td className="tdChkTickData">

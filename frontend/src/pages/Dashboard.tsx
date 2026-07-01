@@ -369,7 +369,20 @@ const Dashboard: React.FC = () => {
                         </td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <img src="/Content/images/comments2.jpg" title={row.remarks} alt="Comments" className="comment-trigger" />
+                            <img
+                              src="/Content/images/comments2.jpg"
+                              title={row.remarks}
+                              alt="Comments"
+                              className="comment-trigger"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => {
+                                if (row.remarks) {
+                                  alert(`Remarks:\n${row.remarks}`);
+                                } else {
+                                  alert("No remarks found.");
+                                }
+                              }}
+                            />
                             {row.remarks && row.remarks.toLowerCase().includes("declined") && (
                               <button
                                 type="button"
