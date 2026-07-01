@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+
 
 interface SessionUser {
   employeeName?: string;
   role?: number | string;
+  emailId?: string;
 }
 
 const Layout: React.FC = () => {
   const [user, setUser] = useState<SessionUser>({ employeeName: 'User Name', role: 2 });
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetch('/api/session/', { credentials: 'include' })
@@ -23,6 +26,25 @@ const Layout: React.FC = () => {
       });
   }, []);
 
+  const role = String(user.role ?? '');
+  useEffect(() => {
+    if (user.employeeName !== 'User Name') {
+      if (role === '3') {
+        if (location.pathname !== '/approver') {
+          navigate('/approver');
+        }
+      } else if (role === '2') {
+        if (location.pathname === '/approver') {
+          navigate('/home');
+        }
+      } else {
+        if (['/approver', '/admin-report', '/user-management', '/freeze-dates'].includes(location.pathname)) {
+          navigate('/home');
+        }
+      }
+    }
+  }, [user, location.pathname, navigate, role]);
+
   const logout = async () => {
     try {
       await fetch('/api/logout/', {
@@ -34,7 +56,7 @@ const Layout: React.FC = () => {
     }
   };
 
-  const isAdmin = String(user.role ?? '2') === '2';
+  const isAdmin = role === '2';
 
   return (
     <div className="w-screen h-screen d-flex payroll-shell">
@@ -48,44 +70,66 @@ const Layout: React.FC = () => {
         <div className="flex-grow-1 overflow-auto customScrollbar optionsPart">
           <div className="w-100 h-100">
             <ul className="aside_options">
-              <li>
-                <NavLink to="/home" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-                  <img src="/assets/images/aside/home.png" alt="" />
-                  <p>Home</p>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/templates" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-                  <img src="/assets/images/aside/templates.png" alt="" />
-                  <p>Templates</p>
-                </NavLink>
-              </li>
-              {isAdmin && (
+              {role !== '3' && (
                 <>
                   <li>
-                    <NavLink to="/admin-report" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-                      <img src="/assets/images/aside/managers.png" alt="" />
-                      <p>
-                        Spoc/ <br /> Managers
-                      </p>
+                    <NavLink to="/home" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                      <img src="/assets/images/aside/home.png" alt="" />
+                      <p>Home</p>
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink to="/user-management" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-                      <img src="/assets/images/aside/managers.png" alt="" />
-                      <p>
-                        User/ <br /> Management
-                      </p>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/freeze-dates" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                    <NavLink to="/templates" className={({ isActive }) => (isActive ? 'active' : undefined)}>
                       <img src="/assets/images/aside/templates.png" alt="" />
-                      <p>Freeze Dates</p>
+                      <p>Templates</p>
                     </NavLink>
                   </li>
                 </>
               )}
+              {(() => {
+                const isApprover = role === '3';
+                if (isApprover) {
+                  return (
+                    <li>
+                      <NavLink to="/approver" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                        <img src="/assets/images/aside/managers.png" alt="" />
+                        <p>
+                          Approver/ <br /> Managers
+                        </p>
+                      </NavLink>
+                    </li>
+                  );
+                }
+                if (isAdmin) {
+                  return (
+                    <>
+                      <li>
+                        <NavLink to="/admin-report" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                          <img src="/assets/images/aside/managers.png" alt="" />
+                          <p>
+                            Spoc/ <br /> Managers
+                          </p>
+                        </NavLink>
+                      </li>
+                      <li>
+                        <NavLink to="/user-management" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                          <img src="/assets/images/aside/managers.png" alt="" />
+                          <p>
+                            User/ <br /> Management
+                          </p>
+                        </NavLink>
+                      </li>
+                      <li>
+                        <NavLink to="/freeze-dates" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                          <img src="/assets/images/aside/templates.png" alt="" />
+                          <p>Freeze Dates</p>
+                        </NavLink>
+                      </li>
+                    </>
+                  );
+                }
+                return null;
+              })()}
             </ul>
 
             <ul className="profileOptions">

@@ -89,29 +89,114 @@ const tabs: Array<{ id: AdminTab; label: string }> = [
   { id: 'consolidated', label: 'Consolidated' },
 ];
 
-const lockedStatuses = new Set(['Approved', 'Rejected', 'Consolidated', 'Merged']);
+const lockedStatuses = new Set(['Approved', 'Rejected', 'Consolidated', 'Merged', 'Approved by Admin', 'Rejected by Admin']);
 
 const AdminReport: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('payroll');
   const [data, setData] = useState<AdminReportData>(fallbackData);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
 
-  useEffect(() => {
+  const handleTabChange = (tabId: AdminTab) => {
+    setActiveTab(tabId);
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  };
+
+  const fetchReport = () => {
     fetch('/api/admin-report/', { credentials: 'include' })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
         if (payload?.success && payload.data) {
           setData(payload.data);
+          setSelectedIds(new Set());
+          setCurrentPage(1);
         }
       })
       .catch(() => {
         setData(fallbackData);
+        setSelectedIds(new Set());
+        setCurrentPage(1);
       });
+  };
+
+  useEffect(() => {
+    fetchReport();
   }, []);
+
+  const handleAction = async (action: 'approve' | 'reject' | 'consolidate') => {
+    if (selectedIds.size === 0) {
+      alert('Please select at least one row.');
+      return;
+    }
+
+    let comments = '';
+    if (action === 'reject') {
+      const reason = prompt('Please enter the reason for rejection:');
+      if (!reason) {
+        return; 
+      }
+      comments = reason;
+    }
+
+    const rowsPayload = Array.from(selectedIds).map(id => {
+      return allRows.find(r => r.id === id);
+    }).filter(Boolean);
+
+    const payload = {
+      action,
+      rows: rowsPayload,
+      comments,
+      documentType: activeTab,
+    };
+
+    try {
+      const response = await fetch(`/api/admin/${action}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (result.success) {
+        alert(`${action} successful for ${result.affected} records.`);
+        
+        const newStatus = action === 'approve' ? 'Approved by Admin' : action === 'reject' ? 'Rejected by Admin' : 'Consolidated';
+        setData((prev) => {
+          const newData = { ...prev };
+          const updatedTabRows = newData[activeTab].map(r => 
+            selectedIds.has(r.id) ? { ...r, status: newStatus } : r
+          );
+          newData[activeTab] = updatedTabRows;
+          return newData;
+        });
+        setSelectedIds(new Set());
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (err) {
+      alert(`Could not process ${action} action.`);
+    }
+  };
 
   const allRows = useMemo(() => Object.values(data).flat(), [data]);
   const activeRows = data[activeTab] ?? [];
-  const selectableRows = activeRows.filter((row) => !lockedStatuses.has(row.status));
+  const totalPages = Math.ceil(activeRows.length / itemsPerPage);
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return activeRows.slice(startIndex, startIndex + itemsPerPage);
+  }, [activeRows, currentPage, itemsPerPage]);
+
+  const selectableRows = useMemo(() => {
+    return paginatedRows.filter((row) => {
+      if (activeTab === 'consolidated') {
+        return row.status === 'Merged';
+      } else {
+        return row.status === 'Approver Submit' || row.status === 'Approved by Admin';
+      }
+    });
+  }, [paginatedRows, activeTab]);
   const allSelected = selectableRows.length > 0 && selectableRows.every((row) => selectedIds.has(row.id));
 
   const counts = useMemo(
@@ -119,10 +204,10 @@ const AdminReport: React.FC = () => {
       payroll: data.payroll.length,
       irefer: data.irefer.length,
       transport: data.transport.length,
-      pending: allRows.filter((row) => row.status === 'Pending').length,
-      rejected: allRows.filter((row) => row.status === 'Rejected').length,
-      consolidated: allRows.filter((row) => row.status === 'Consolidated').length,
-      approved: allRows.filter((row) => row.status === 'Approved').length,
+      pending: allRows.filter((row) => row.status === 'Pending / Review' || row.status === 'Approver Submit').length,
+      rejected: allRows.filter((row) => row.status === 'Rejected by Admin' || row.status === 'Approver Reject').length,
+      consolidated: allRows.filter((row) => row.status === 'Consolidated' || row.status === 'Merged').length,
+      approved: allRows.filter((row) => row.status === 'Approved by Admin').length,
     }),
     [allRows, data],
   );
@@ -209,7 +294,7 @@ const AdminReport: React.FC = () => {
                   type="button"
                   role="tab"
                   aria-selected={activeTab === tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                 >
                   {tab.label}
                 </button>
@@ -219,9 +304,9 @@ const AdminReport: React.FC = () => {
 
           <div className="tab-content payroll-tab-content">
             <div className="admin-action-bar">
-              <button type="button">Approve</button>
-              <button type="button">Reject</button>
-              <button type="button" className="consolidateBtn">
+              <button type="button" onClick={() => handleAction('approve')}>Approve</button>
+              <button type="button" onClick={() => handleAction('reject')}>Reject</button>
+              <button type="button" className="consolidateBtn" onClick={() => handleAction('consolidate')}>
                 Consolidate
               </button>
             </div>
@@ -242,13 +327,14 @@ const AdminReport: React.FC = () => {
                     <th>Status</th>
                     <th>Remarks</th>
                     <th>Template</th>
-                    <th>Email</th>
                     <th>Action Replace</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {activeRows.map((row) => {
-                    const isLocked = lockedStatuses.has(row.status);
+                  {paginatedRows.map((row) => {
+                    const isLocked = activeTab === 'consolidated'
+                      ? (row.status !== 'Merged')
+                      : (row.status !== 'Approver Submit' && row.status !== 'Approved by Admin');
                     return (
                       <tr className="trChkTickData" key={row.id}>
                         <td>
@@ -282,19 +368,10 @@ const AdminReport: React.FC = () => {
                             <span>Download</span>
                           </a>
                         </td>
-                        <td className="tdChkTickData">
-                          <a download href={row.emailUrl} className="downloadBtn">
-                            <img src="/assets/images/templates/download_orange.png" className="dload" alt="" />
-                            <span>Download</span>
-                          </a>
-                        </td>
                         <td>
                           <div className="replace-actions">
                             <button disabled={isLocked} title="replace template" type="button">
                               <img src="/assets/images/icons/templateicon.png" alt="" />
-                            </button>
-                            <button disabled={isLocked} title="replace email" type="button">
-                              <img src="/assets/images/icons/emailAttachicon.png" alt="" />
                             </button>
                           </div>
                         </td>
@@ -303,7 +380,7 @@ const AdminReport: React.FC = () => {
                   })}
                   {activeRows.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="empty-table-cell">
+                      <td colSpan={8} className="empty-table-cell">
                         No uploads found.
                       </td>
                     </tr>
@@ -311,6 +388,39 @@ const AdminReport: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {totalPages > 1 && (
+              <div className="pagination-bar">
+                <button
+                  className="pagination-btn"
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                >
+                  &laquo; Prev
+                </button>
+                <div className="pagination-pages">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      className={`pagination-page-btn ${currentPage === pageNum ? 'active' : ''}`}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="pagination-btn"
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                >
+                  Next &raquo;
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

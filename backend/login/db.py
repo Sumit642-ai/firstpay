@@ -4,7 +4,7 @@ from django.db import connection
 
 
 def get_payroll_connection():
-    return pyodbc.connect(settings.PAYROLL_PYODBC_CONNECTION_STRING, timeout=5)
+    return pyodbc.connect(settings.PAYROLL_PYODBC_CONNECTION_STRING, timeout=5, autocommit=True)
 
 
 def check_database_connection():

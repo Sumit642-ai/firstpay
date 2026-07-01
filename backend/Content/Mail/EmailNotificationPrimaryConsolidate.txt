@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>FirstPay Acknowledgement Mail</title>
+    <style type="text/css">
+        body {
+            font-family: Verdana, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;f
+            border-top: 5px solid darkorange; /* Top border for emphasis */
+        }
+
+        .header {
+            background-color: darkorange;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+            font-weight: bold;
+            font-size: 18px; /* Increased font size for header */
+        }
+
+        .normaltext {
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 15px 0; /* Added margin for spacing */
+            background-color: #f2f2f2; /* Changed to light grey */
+	padding: 15px;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #ddd; /* Top border for footer */
+            padding-top: 10px; /* Padding for footer */
+        }
+
+        .note {
+            color: red;
+            font-weight: bold;
+        }
+
+        .thank-you {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Additional styling for better visual appeal */
+        p {
+            margin: 10px 0; /* Consistent spacing for paragraphs */
+        }
+
+        strong {
+            color: darkorange; /* Highlight strong text */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            FirstPay Acknowledgement
+        </div>
+        <div class="normaltext">
+            <p>Hi,</p>
+            <p>Your Request ID <strong>[@@REQUESTID]</strong> for Document Type - <strong>[@@DOCTYPE]</strong> has been consolidated by the admin.</p>
+            <p class="thank-you">Thank you,<br />FirstPay Admin Team</p>
+            <p>For more details, please log in to the tool.</p>
+            <p><a href="http://fa.firstsource.com/FirstPay" style="color: darkorange;">FirstPay</a></p>
+        </div>
+        <div class="footer">
+            <p class="note">Note: This is a system-generated email, please do not reply to it.</p>
+        </div>
+    </div>
+</body>
+</html>

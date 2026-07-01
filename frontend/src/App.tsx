@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import AdminReport from './pages/AdminReport';
+import ApproverReport from './pages/ApproverReport';
 import Templates from './pages/Templates';
 import UserManagement from './pages/UserManagement';
 import FreezeDate from './pages/FreezeDate';
@@ -16,6 +17,7 @@ const App: React.FC = () => {
         <Route element={<Layout />}>
             <Route path="/home" element={<Dashboard />} />
             <Route path="/admin-report" element={<AdminReport />} />
+            <Route path="/approver" element={<ApproverReport />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/user-management" element={<UserManagement />} />
             <Route path="/freeze-dates" element={<FreezeDate />} />

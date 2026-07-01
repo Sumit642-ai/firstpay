@@ -13,9 +13,20 @@ from .views import (
     users_collection,
     users_detail,
     users_options,
+    submit_upload,
+    validate_upload,
+    admin_approve,
+    admin_reject,
+    admin_consolidate,
+    get_upload_flags,
+    submit_flag_decisions,
+    get_declined_rows_summary,
 )
 
 urlpatterns = [
+    path('upload/<int:log_id>/flags/', get_upload_flags, name='get-upload-flags'),
+    path('upload/<int:log_id>/flags/decide/', submit_flag_decisions, name='submit-flag-decisions'),
+    path('upload/<int:log_id>/flags/declined-summary/', get_declined_rows_summary, name='get-declined-rows-summary'),
     path('', api_index, name='api-index'),
     path('db-status/', db_status, name='db-status'),
     path('dashboard/', dashboard_report, name='dashboard-report'),
@@ -28,4 +39,9 @@ urlpatterns = [
     path('login/', domain_login, name='domain-login'),
     path('logout/', sign_out, name='sign-out'),
     path('session/', session_info, name='session-info'),
+    path('upload/', submit_upload, name='submit-upload'),
+    path('validate-upload/', validate_upload, name='validate-upload'),
+    path('admin/approve/', admin_approve, name='admin-approve'),
+    path('admin/reject/', admin_reject, name='admin-reject'),
+    path('admin/consolidate/', admin_consolidate, name='admin-consolidate'),
 ]
