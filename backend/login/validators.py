@@ -440,7 +440,8 @@ def run_validation_checklist(template_file, email_file, doc_code, user_geo):
 
         # Check column names and order
         for c_idx, (act_col, exp_col) in enumerate(zip(header_cells, expected_cols)):
-            if act_col != exp_col:
+            is_amount_flex = (act_col.lower() in ('amount', 'amounts') and exp_col.lower() in ('amount', 'amounts'))
+            if act_col != exp_col and not is_amount_flex:
                 checklist["columnNames"] = {"label": "Column Names & Order Check", "status": "fail", "message": f"Mismatch in sheet '{sheet_name}' column {c_idx+1}: expected '{exp_col}', found '{act_col}'."}
                 column_names_ok = False
                 break
