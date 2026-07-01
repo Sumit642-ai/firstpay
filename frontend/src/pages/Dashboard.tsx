@@ -34,6 +34,8 @@ interface UploadRow {
   remarks: string;
   templateUrl: string;
   emailUrl: string;
+  approverName?: string;
+  approvalDate?: string;
 }
 
 const tabs: UploadTabConfig[] = [
@@ -351,6 +353,8 @@ const Dashboard: React.FC = () => {
                       <th>Status</th>
                       <th>Remarks</th>
                       <th>Template</th>
+                      <th>Approver</th>
+                      <th>Approved Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -392,11 +396,13 @@ const Dashboard: React.FC = () => {
                             <span>Download</span>
                           </a>
                         </td>
+                        <td>{row.approverName || 'N/A'}</td>
+                        <td>{row.approvalDate || 'N/A'}</td>
                       </tr>
                     ))}
                     {rows.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="empty-table-cell">
+                        <td colSpan={7} className="empty-table-cell">
                           No uploads found.
                         </td>
                       </tr>

@@ -212,10 +212,14 @@ def public_file_url(path):
     return f'/{text.lstrip("./")}'
 
 
-def upload_row_from_db(row, fallback_id):
+def upload_row_from_db(row, fallback_id, log_details=None):
     doc_code = normalize_document_type(row_value(row, 'DocumentType', 'TypeOfDoc', 'DocType'))
+    log_id = int(row_value(row, 'LogId', 'MMLogId', 'Id', 'ID', fallback=fallback_id) or fallback_id)
+    
+    details = log_details.get(log_id, {}) if log_details else {}
+    
     return {
-        'id': int(row_value(row, 'LogId', 'MMLogId', 'Id', 'ID', fallback=fallback_id) or fallback_id),
+        'id': log_id,
         'mergeId': row_value(row, 'MMLogId', 'MergeId', 'MMId', fallback=''),
         'userId': safe_text(row_value(row, 'UploadedByEmpNo', 'UploadedBy', 'Uploadedby', 'UserID', 'EmpNo')),
         'documentType': safe_text(row_value(row, 'DocumentType', 'TypeOfDoc', fallback=DOCUMENT_LABELS.get(doc_code, doc_code))),
@@ -227,6 +231,8 @@ def upload_row_from_db(row, fallback_id):
         'templateUrl': public_file_url(row_value(row, 'S3Link', 'FilePath', 'TemplatePath')),
         'emailUrl': public_file_url(row_value(row, 'FilePathEmail', 'EmailPath')),
         'filePath': public_file_url(row_value(row, 'FilePath', 'S3Link', 'TemplatePath')),
+        'approverName': details.get('approver', ''),
+        'approvalDate': details.get('approvalDate', ''),
     }
 
 
@@ -237,9 +243,9 @@ def empty_upload_groups(include_consolidated=False):
     return groups
 
 
-def append_upload_rows(groups, rows, fallback_offset=0):
+def append_upload_rows(groups, rows, fallback_offset=0, log_details=None):
     for index, row in enumerate(rows, start=1):
-        item = upload_row_from_db(row, fallback_offset + index)
+        item = upload_row_from_db(row, fallback_offset + index, log_details)
         doc_code = item.get('documentCode')
         key = {'PRL': 'payroll', 'IRF': 'irefer', 'TDCT': 'transport'}.get(doc_code, 'payroll')
         groups.setdefault(key, []).append(item)
@@ -271,18 +277,44 @@ def get_uploaded_files_payload(action, request, include_consolidated=False):
         'SP_GetAllUploadedFiles',
         [('@LoginId', domain_id), ('@Action', action), ('@UserGeo', user_geo)],
     )
+    
+    # Extract log IDs to fetch Approver and Approval/Rejection Date
+    log_ids = []
+    for r_set in result_sets:
+        for r in r_set:
+            lid = r.get('LogId') or r.get('MMLogId') or r.get('Id') or r.get('ID')
+            if lid:
+                log_ids.append(lid)
+                
+    log_details = {}
+    if log_ids:
+        log_ids_str = ', '.join(str(int(lid)) for lid in log_ids)
+        conn = get_payroll_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT LogId, Approver, AdminApproverejectDate FROM tbl_UploadSuccessLog WHERE LogId IN ({log_ids_str})")
+            for log_id, approver, app_date in cursor.fetchall():
+                log_details[log_id] = {
+                    'approver': approver or '',
+                    'approvalDate': app_date.strftime("%d/%b/%Y") if app_date else ''
+                }
+        except Exception as e:
+            logging.error(f"Error loading extra log columns: {e}")
+        finally:
+            conn.close()
+
     groups = empty_upload_groups(include_consolidated)
     if action == 'AdminSelect':
         names = ['payroll', 'irefer', 'transport', 'email', 'payroll', 'irefer', 'transport']
         for set_index, rows in enumerate(result_sets):
             if set_index < 3:
-                append_upload_rows({names[set_index]: groups[names[set_index]]}, rows, set_index * 1000)
+                append_upload_rows({names[set_index]: groups[names[set_index]]}, rows, set_index * 1000, log_details)
             elif include_consolidated and set_index >= 4:
                 for row_index, row in enumerate(rows, start=1):
-                    groups['consolidated'].append(upload_row_from_db(row, 4000 + set_index * 100 + row_index))
+                    groups['consolidated'].append(upload_row_from_db(row, 4000 + set_index * 100 + row_index, log_details))
     else:
         for set_index, rows in enumerate(result_sets[:3]):
-            append_upload_rows(groups, rows, set_index * 1000)
+            append_upload_rows(groups, rows, set_index * 1000, log_details)
     return groups
 
 
