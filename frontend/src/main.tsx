@@ -3,6 +3,16 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 
+// Intercept all fetch requests to bypass ngrok warning pages in hosted development
+const originalFetch = window.fetch;
+window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const newInit = { ...init };
+  const headers = new Headers(newInit.headers);
+  headers.set('ngrok-skip-browser-warning', 'true');
+  newInit.headers = headers;
+  return originalFetch(input, newInit);
+};
+
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
