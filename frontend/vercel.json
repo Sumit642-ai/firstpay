@@ -13,6 +13,10 @@
       "destination": "https://headstone-lard-remote.ngrok-free.dev/Content/MergedFiles/$1"
     },
     {
+      "source": "/DownloadTemplates/(.*)",
+      "destination": "https://headstone-lard-remote.ngrok-free.dev/DownloadTemplates/$1"
+    },
+    {
       "source": "/((?!api|UploadFiles|Content|DownloadTemplates|assets|favicon|.*\\.).*)",
       "destination": "/index.html"
     }

@@ -23,6 +23,10 @@
       "dest": "https://headstone-lard-remote.ngrok-free.dev/Content/MergedFiles/$1"
     },
     {
+      "src": "/DownloadTemplates/(.*)",
+      "dest": "https://headstone-lard-remote.ngrok-free.dev/DownloadTemplates/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "frontend/package.json"
     }
