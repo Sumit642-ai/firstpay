@@ -276,8 +276,10 @@ def user_can_view_row(item, request):
     emp_name = str(request.session.get('EmployeeName') or '')
     email_id = str(request.session.get('EmailId') or '')
     
-    # 1. Admin (Role 2) can see everything
+    # 1. Admin (Role 2) can see everything after the approver has acted (StateId != 3)
     if role_id == '2':
+        if int(item.get('stateId') or 3) == 3:
+            return False
         return True
         
     # 2. Approver (Role 3) can only see rows where they are the designated approver
