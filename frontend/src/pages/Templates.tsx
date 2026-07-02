@@ -60,10 +60,12 @@ const Templates: React.FC = () => {
 
   const handleDownloadFile = async (url: string, filename: string) => {
     try {
-      const response = await fetch(url, {
+      const cacheBustedUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+      const response = await fetch(cacheBustedUrl, {
         headers: {
           'ngrok-skip-browser-warning': 'true'
-        }
+        },
+        cache: 'no-store'
       });
       if (!response.ok) {
         throw new Error(`Failed to download: ${response.statusText}`);
