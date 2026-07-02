@@ -683,6 +683,38 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
         import logging
         logging.error(f"Error clearing existing flags: {e}")
 
+    # Helper function to extract month from file name
+    import re
+    def extract_month_from_filename(filename):
+        if not filename:
+            return ""
+        month_regex = re.compile(
+            r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s'-]*(\d{2,4})\b",
+            re.IGNORECASE
+        )
+        match = month_regex.search(filename)
+        if match:
+            m = match.group(1)[:3].capitalize()
+            y = match.group(2)
+            if len(y) == 4:
+                y = y[2:]
+            return f"{m}'{y}"
+        return ""
+
+    # Fetch original filename and upload date for fallback month extraction
+    original_filename = ""
+    upload_month = ""
+    try:
+        cursor.execute("SELECT FileName, CreatedDate FROM tbl_UploadSuccessLog WHERE LogId = ?", [log_id])
+        res = cursor.fetchone()
+        if res:
+            original_filename = res[0] or ""
+            if res[1]:
+                upload_month = res[1].strftime("%b'%y")
+    except Exception as e:
+        import logging
+        logging.error(f"Error querying filename/upload date from log: {e}")
+
     # Gather past approved/merged files in the last 12 rolling months
     past_payouts = []
     import datetime as dt
@@ -765,6 +797,48 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 msg = f"Duplicate check: Identical payout already approved in file '{pr['source_file']}' uploaded on {pr['source_date']}."
                 raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "DuplicatePayout", msg)
                 break
+
+        # --- Check 1b: Duplicate check against rolling ETO team database (SSMS) ---
+        try:
+            target_month = month
+            if not target_month:
+                target_month = extract_month_from_filename(original_filename)
+                if not target_month:
+                    target_month = extract_month_from_filename(os.path.basename(str(file_path_or_obj)))
+                    if not target_month:
+                        target_month = upload_month
+
+            eto_payout_type = payout_type
+            if doc_code == 'IRF':
+                eto_payout_type = 'IRF'
+            elif doc_code == 'TDCT':
+                eto_payout_type = 'TDCT'
+            elif doc_code == 'PRL' and payout_type in ('VP Ratings', 'VP Arrears'):
+                eto_payout_type = 'PRL'
+
+            cursor.execute("""
+                DECLARE @is_dup BIT;
+                DECLARE @details VARCHAR(1000);
+                EXEC SP_ValidateETODuplicate 
+                    @EmpNo = ?, 
+                    @EmployeeName = ?, 
+                    @PayoutMonth = ?, 
+                    @Frequency = ?, 
+                    @Amount = ?, 
+                    @PayoutType = ?, 
+                    @IsDuplicate = @is_dup OUTPUT, 
+                    @DuplicateDetails = @details OUTPUT;
+                SELECT @is_dup, @details;
+            """, [emp_no, emp_name, target_month, frequency, amount, eto_payout_type])
+            row_res = cursor.fetchone()
+            if row_res:
+                is_duplicate = bool(row_res[0])
+                dup_details = str(row_res[1] or '')
+                if is_duplicate:
+                    raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "DuplicatePayout", dup_details)
+        except Exception as sp_err:
+            import logging
+            logging.error(f"Error calling SP_ValidateETODuplicate for {emp_no}: {sp_err}")
 
         # --- Check 2: Same bank account used across multiple Employee IDs ---
         if bank_account and str(bank_account).strip().lower() != "none" and str(bank_account).strip() != "":
