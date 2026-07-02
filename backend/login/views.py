@@ -564,9 +564,9 @@ def freeze_interval(request):
 @api_view(['GET', 'POST'])
 def users_collection(request):
     if request.method == 'GET':
-        users = EmployeeMaster.objects.filter(deleted_status=False).order_by('employee_code', 'employee_name')
+        users = list(EmployeeMaster.objects.filter(deleted_status=False).distinct().order_by('employee_code', 'employee_name'))
         serializer = EmployeeMasterSerializer(users, many=True)
-        return Response({'success': True, 'totalEmployees': users.count(), 'data': serializer.data})
+        return Response({'success': True, 'totalEmployees': len(users), 'data': serializer.data})
 
     serializer = EmployeeMasterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -587,9 +587,8 @@ def users_collection(request):
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 def users_detail(request, pk):
-    try:
-        employee = EmployeeMaster.objects.get(pk=pk, deleted_status=False)
-    except EmployeeMaster.DoesNotExist:
+    employee = EmployeeMaster.objects.filter(pk=pk, deleted_status=False).first()
+    if not employee:
         return Response({'success': False, 'message': 'Employee not found.'}, status=drf_status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
@@ -907,10 +906,10 @@ def get_admins_by_geo(user_geo):
     else:
         std_geo = user_geo or 'India' # Fallback
         
-    # First attempt: Query admins with std_geo from database
     admin_emails = list(
         EmployeeMaster.objects.filter(role=2, emp_geo__iexact=std_geo, deleted_status=False)
         .values_list('employee_email_id', flat=True)
+        .distinct()
     )
     admin_emails = [e for e in admin_emails if e and '@' in str(e)]
     
