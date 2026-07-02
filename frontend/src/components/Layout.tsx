@@ -70,22 +70,18 @@ const Layout: React.FC = () => {
         <div className="flex-grow-1 overflow-auto customScrollbar optionsPart">
           <div className="w-100 h-100">
             <ul className="aside_options">
-              {role !== '3' && (
-                <>
-                  <li>
-                    <NavLink to="/home" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-                      <img src="/assets/images/aside/home.png" alt="" />
-                      <p>Home</p>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/templates" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-                      <img src="/assets/images/aside/templates.png" alt="" />
-                      <p>Templates</p>
-                    </NavLink>
-                  </li>
-                </>
-              )}
+              <li>
+                <NavLink to="/home" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                  <img src="/assets/images/aside/home.png" alt="" />
+                  <p>Home</p>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/templates" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                  <img src="/assets/images/aside/templates.png" alt="" />
+                  <p>Templates</p>
+                </NavLink>
+              </li>
               {(() => {
                 const isApprover = role === '3';
                 if (isApprover) {
