@@ -2,10 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/config/wsgi.py",
-      "use": "@vercel/python"
-    },
-    {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -16,7 +12,15 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/config/wsgi.py"
+      "dest": "https://headstone-lard-remote.ngrok-free.dev/api/$1"
+    },
+    {
+      "src": "/UploadFiles/(.*)",
+      "dest": "https://headstone-lard-remote.ngrok-free.dev/UploadFiles/$1"
+    },
+    {
+      "src": "/Content/MergedFiles/(.*)",
+      "dest": "https://headstone-lard-remote.ngrok-free.dev/Content/MergedFiles/$1"
     },
     {
       "src": "/(.*)",
