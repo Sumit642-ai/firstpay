@@ -98,6 +98,24 @@ const Dashboard: React.FC = () => {
   const [autoReload, setAutoReload] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
+  const [dynamicApprovers, setDynamicApprovers] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/users/', { credentials: 'include' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (payload?.success && Array.isArray(payload.data)) {
+          const fetchedApprovers = payload.data
+            .filter((u: any) => String(u.Role) === '3' || u.RoleName === 'Approver')
+            .map((u: any) => ({
+              value: u.EmployeeEmailId,
+              label: `${u.EmployeeName} - ${u.EmployeeEmailId}`
+            }));
+          setDynamicApprovers(fetchedApprovers);
+        }
+      })
+      .catch((err) => console.error('Failed to fetch users list', err));
+  }, []);
 
   // Declines summary modal states
   const [selectedLogIdForDeclines, setSelectedLogIdForDeclines] = useState<number | null>(null);
@@ -571,7 +589,7 @@ const Dashboard: React.FC = () => {
                         onChange={(event) => updateActiveUpload({ approver: event.target.value, message: '' })}
                       >
                         <option value="">--Select Approver--</option>
-                        {approvers.map((approver) => (
+                        {(dynamicApprovers.length > 0 ? dynamicApprovers : approvers).map((approver) => (
                           <option key={approver.value} value={approver.label}>
                             {approver.label}
                           </option>
