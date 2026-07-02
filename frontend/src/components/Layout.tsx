@@ -30,7 +30,7 @@ const Layout: React.FC = () => {
   useEffect(() => {
     if (user.employeeName !== 'User Name') {
       if (role === '3') {
-        if (location.pathname !== '/approver') {
+        if (!['/approver', '/home', '/templates'].includes(location.pathname)) {
           navigate('/approver');
         }
       } else if (role === '2') {
