@@ -689,7 +689,7 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
         if not filename:
             return ""
         month_regex = re.compile(
-            r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s'-]*(\d{2,4})\b",
+            r"(?:^|[^a-zA-Z])(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s'_-]*(\d{2,4})\b",
             re.IGNORECASE
         )
         match = month_regex.search(filename)
