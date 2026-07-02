@@ -808,7 +808,7 @@ def submit_upload(request):
                         match = re.search(r'[\w\.-]+@[\w\.-]+', approver_label)
                         if match:
                             approver_email = match.group(0).strip().lower()
-                            emp_app = EmployeeMaster.objects.filter(employee_email_id=approver_email, deleted_status=False).first()
+                            emp_app = EmployeeMaster.objects.filter(employee_email_id__iexact=approver_email, deleted_status=False).first()
                             if emp_app and emp_app.employee_name:
                                 approver_name = emp_app.employee_name.strip()
                     
