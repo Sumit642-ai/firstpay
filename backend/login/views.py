@@ -391,11 +391,12 @@ def get_uploaded_files_payload(action, request, include_consolidated=False):
         conn = get_payroll_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute(f"SELECT LogId, Approver, AdminApproverejectDate FROM tbl_UploadSuccessLog WHERE LogId IN ({log_ids_str})")
-            for log_id, approver, app_date in cursor.fetchall():
+            cursor.execute(f"SELECT LogId, Approver, ApprovedRejectDate, AdminApproverejectDate FROM tbl_UploadSuccessLog WHERE LogId IN ({log_ids_str})")
+            for log_id, approver, app_date_approver, app_date_admin in cursor.fetchall():
+                final_date = app_date_admin or app_date_approver
                 log_details[log_id] = {
                     'approver': approver or '',
-                    'approvalDate': app_date.strftime("%d/%b/%Y") if app_date else ''
+                    'approvalDate': final_date.strftime("%d/%b/%Y") if final_date else ''
                 }
         except Exception as e:
             logging.error(f"Error loading extra log columns: {e}")
