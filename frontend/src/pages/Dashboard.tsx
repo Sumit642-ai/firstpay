@@ -203,35 +203,16 @@ const Dashboard: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const runValidation = async (file: File) => {
     updateActiveUpload({
-      file: event.target.files?.[0] ?? null,
+      file,
       validationChecklist: null,
       isValidated: false,
-      message: '',
+      message: 'Running validation checklist...',
     });
-  };
-
-  const handleDrop = (event: React.DragEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    updateActiveUpload({
-      file: event.dataTransfer.files?.[0] ?? null,
-      validationChecklist: null,
-      isValidated: false,
-      message: '',
-    });
-  };
-
-  const handleValidate = async () => {
-    if (!activeUpload.file) {
-      updateActiveUpload({ message: 'Please attach the template file.' });
-      return;
-    }
-    
-    updateActiveUpload({ message: 'Running validation checklist...' });
     
     const formData = new FormData();
-    formData.append('templateFile', activeUpload.file);
+    formData.append('templateFile', file);
     formData.append('documentType', activeTab);
     
     try {
@@ -240,13 +221,20 @@ const Dashboard: React.FC = () => {
         body: formData,
       });
       const data = await response.json();
-      updateActiveUpload({
-        validationChecklist: data.checklist,
-        isValidated: data.success,
-        message: data.success 
-          ? 'Validation checks passed successfully! Next button is now enabled.' 
-          : 'Validation failed. Please correct the highlighted errors.'
-      });
+      
+      setUploads((current) => ({
+        ...current,
+        [activeTab]: {
+          ...current[activeTab],
+          file,
+          validationChecklist: data.checklist,
+          isValidated: data.success,
+          message: data.success 
+            ? 'Validation checks passed successfully! Next button is now enabled.' 
+            : 'Validation failed. Please correct the highlighted errors.'
+        }
+      }));
+
       if (!data.success && data.checklist) {
         const failedItems = Object.values(data.checklist)
           .filter((item: any) => item.status === 'fail')
@@ -256,10 +244,30 @@ const Dashboard: React.FC = () => {
         }
       }
     } catch (err) {
-      updateActiveUpload({
-        message: 'Could not connect to backend validation service.',
-        isValidated: false
-      });
+      setUploads((current) => ({
+        ...current,
+        [activeTab]: {
+          ...current[activeTab],
+          file,
+          message: 'Could not connect to backend validation service.',
+          isValidated: false
+        }
+      }));
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (file) {
+      runValidation(file);
+    }
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0] ?? null;
+    if (file) {
+      runValidation(file);
     }
   };
 
@@ -543,14 +551,6 @@ const Dashboard: React.FC = () => {
 
 
 
-                  <button
-                    className="validate-btn"
-                    type="button"
-                    disabled={!activeUpload.file}
-                    onClick={handleValidate}
-                  >
-                    Validate Upload
-                  </button>
 
                   {activeUpload.validationChecklist && (
                     <div className="validation-checklist">
