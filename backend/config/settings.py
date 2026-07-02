@@ -80,7 +80,7 @@ AUTH_USER_IDS = {
         'user40,user41,user42,user43,user44,user45,user46,user47,user48,user49,'
         'user50,user51,user52,user53,user54,user55,user56,user57,user58,user59,'
         'user60,user61,user62,user63,user64,user65,user66,user67,user68,user69,'
-        'user70,PAN71,approver1'
+        'user70,PAN71,approver1,sumitr'
     ).split(',')
     if user.strip()
 }
