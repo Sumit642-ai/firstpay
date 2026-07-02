@@ -276,17 +276,17 @@ def user_can_view_row(item, request):
     emp_name = str(request.session.get('EmployeeName') or '')
     email_id = str(request.session.get('EmailId') or '')
     
-    # 1. Admin (Role 2) can see everything after the approver has acted, except rejections
+    state_id = int(item.get('stateId') or 3)
+    
+    # 1. Admin (Role 2) can only see: 10, 5, 6, 7, 8, 9
     if role_id == '2':
-        state_id = int(item.get('stateId') or 3)
-        if state_id in [3, 4, 11]:
-            return False
-        return True
+        if state_id in [10, 5, 6, 7, 8, 9]:
+            return True
+        return False
         
-    # 2. Approver (Role 3) can only see rows where they are the designated approver (except if rejected by approver)
+    # 2. Approver (Role 3) can only see: 3, 4
     if role_id == '3':
-        state_id = int(item.get('stateId') or 3)
-        if state_id == 11:
+        if state_id not in [3, 4]:
             return False
             
         approver_name_db = item.get('approverName') or ''
@@ -309,11 +309,12 @@ def user_can_view_row(item, request):
             
         return False
         
-    # 3. User (Role 1) can only see rows they uploaded
-    item_user = str(item.get('userId') or '').strip().lower()
-    if item_user:
-        if item_user == domain_id.strip().lower() or item_user == login_id.strip().lower():
-            return True
+    # 3. User (Role 1) can only see: 3, 4, 5, 6, 7, 8, 9, 10, 11
+    if state_id in [3, 4, 5, 6, 7, 8, 9, 10, 11]:
+        item_user = str(item.get('userId') or '').strip().lower()
+        if item_user:
+            if item_user == domain_id.strip().lower() or item_user == login_id.strip().lower():
+                return True
     return False
 
 
