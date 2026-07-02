@@ -42,6 +42,8 @@ class EmployeeMasterSerializer(serializers.ModelSerializer):
             return 'User'
         if str(obj.role) == '2':
             return 'Admin'
+        if str(obj.role) == '3':
+            return 'Approver'
         return obj.role or 'N/A'
 
     def validate(self, attrs):
@@ -58,8 +60,8 @@ class EmployeeMasterSerializer(serializers.ModelSerializer):
             if attrs.get(field) in (None, ''):
                 raise serializers.ValidationError({field: message})
 
-        if attrs.get('role') not in (1, 2):
-            raise serializers.ValidationError({'role': 'Role must be 1 or 2.'})
+        if attrs.get('role') not in (1, 2, 3):
+            raise serializers.ValidationError({'role': 'Role must be 1, 2, or 3.'})
 
         if attrs.get('emp_geo') not in ('India', 'Philippines'):
             raise serializers.ValidationError({'emp_geo': 'Employee geo must be India or Philippines.'})
