@@ -285,7 +285,7 @@ const ApproverReport: React.FC = () => {
   }, [activeRows, currentPage, itemsPerPage]);
 
   const selectableRows = useMemo(() => {
-    return paginatedRows.filter((row) => row.status === 'Pending / Review');
+    return paginatedRows.filter((row) => row.status === 'Pending / Review' || row.status === 'Rejected by Admin');
   }, [paginatedRows]);
 
   const allSelected = selectableRows.length > 0 && selectableRows.every((row) => selectedIds.has(row.id));
@@ -384,7 +384,7 @@ const ApproverReport: React.FC = () => {
                 </thead>
                 <tbody>
                   {paginatedRows.map((row) => {
-                    const isLocked = row.status !== 'Pending / Review';
+                    const isLocked = row.status !== 'Pending / Review' && row.status !== 'Rejected by Admin';
                     return (
                       <tr className="trChkTickData" key={row.id}>
                         <td>
