@@ -58,6 +58,30 @@ const Templates: React.FC = () => {
       });
   }, []);
 
+  const handleDownloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert("Error downloading template: " + (err as Error).message);
+    }
+  };
+
   return (
     <div className="w-100 h-100 templatesContentSection">
       <div className="header">
@@ -89,10 +113,20 @@ const Templates: React.FC = () => {
                   </div>
                 </td>
                 <td>
-                  <a download href={row.fileLink[empGeo] || row.fileLink.India || '#'} className="downloadBtn">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = row.fileLink[empGeo] || row.fileLink.India || '#';
+                      if (link !== '#') {
+                        handleDownloadFile(link, `${row.title.replace(/\s+/g, '_')}_Template.xlsx`);
+                      }
+                    }}
+                    className="downloadBtn"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
                     <img src="/assets/images/templates/download_orange.png" alt="download" />
                     <span>Download</span>
-                  </a>
+                  </button>
                 </td>
               </tr>
             ))}

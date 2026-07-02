@@ -94,6 +94,30 @@ const lockedStatuses = new Set(['Approved', 'Rejected', 'Consolidated', 'Merged'
 const AdminReport: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('payroll');
   const [data, setData] = useState<AdminReportData>(fallbackData);
+
+  const handleDownloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert("Error downloading file: " + (err as Error).message);
+    }
+  };
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
@@ -371,10 +395,18 @@ const AdminReport: React.FC = () => {
                           />
                         </td>
                         <td className="tdChkTickData">
-                          <a download href={row.templateUrl} className="downloadBtn">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const filename = row.templateUrl.split('/').pop() || `${row.documentType}_file_${row.id}.xlsx`;
+                              handleDownloadFile(row.templateUrl, filename);
+                            }}
+                            className="downloadBtn"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                          >
                             <img src="/assets/images/templates/download_orange.png" className="dload" alt="" />
                             <span>Download</span>
-                          </a>
+                          </button>
                         </td>
                         <td>
                           <div className="replace-actions">
