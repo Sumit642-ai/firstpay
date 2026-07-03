@@ -9,7 +9,7 @@ from pathlib import Path
 from django.conf import settings
 from django.db import DatabaseError
 from django.db import connection
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils.text import get_valid_filename
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
