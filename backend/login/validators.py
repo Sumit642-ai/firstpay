@@ -887,7 +887,7 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 break
 
 
-    # --- Check 3: Group uploads during the same month (keep highest rating/amount) ---
+    # --- Check 3: Group uploads during the same month (flag different Rating or different Amount) ---
     try:
         now = dt.datetime.now()
         start_of_month = dt.datetime(now.year, now.month, 1)
@@ -917,39 +917,57 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 for smr in sm_rows:
                     smr["source_file"] = sm_file_name
                     smr["source_log_id"] = sm_log_id
+                    smr["source_date"] = sm_created_date.strftime("%d/%b/%Y")
                     same_month_payouts.append(smr)
                     
-        # Group current rows by Employee ID + Payout Month
-        from collections import defaultdict
-        current_grouped = defaultdict(list)
-        for r in current_rows:
-            current_grouped[(r["emp_no"], r["month"])].append(r)
+        # Run Check 3 for each row in the current upload
+        for crow in current_rows:
+            emp_no = crow["emp_no"]
+            month = crow["month"]
+            amount = crow["amount"]
+            rating = str(crow.get("rating") or "").strip()
             
-        # Group same month payouts by Employee ID + Payout Month
-        same_month_grouped = defaultdict(list)
-        for r in same_month_payouts:
-            same_month_grouped[(r["emp_no"], r["month"])].append(r)
-            
-        # For each employee+month in current upload:
-        for (emp_no, month), cur_list in current_grouped.items():
-            sm_list = same_month_grouped.get((emp_no, month), [])
-            all_items = cur_list + sm_list
-            
-            if len(all_items) > 1:
-                max_amount = max(item["amount"] for item in all_items)
-                
-                has_diff = False
-                first_item = all_items[0]
-                for item in all_items:
-                    if abs(item["amount"] - first_item["amount"]) > 0.01 or item["rating"] != first_item["rating"]:
-                        has_diff = True
-                        break
+            # 1. Compare against other rows in the current upload
+            for other in current_rows:
+                if other != crow and other["emp_no"] == emp_no and other["month"].lower() == month.lower():
+                    other_rating = str(other.get("rating") or "").strip()
+                    other_amount = other["amount"]
+                    
+                    if rating.lower() != other_rating.lower():
+                        msg = f"Multiple uploads check: Same Employee ID and Payout Month found with different rating ('{rating}' vs '{other_rating}') in this file at row {other['row_idx']} in sheet '{other['sheet_name']}'."
+                        raise_flag(crow["sheet_name"], crow["row_idx"], emp_no, crow["emp_name"], crow["payout_type"], month, amount, crow["bank_account"], "DifferentRating", msg)
                         
-                if has_diff:
-                    for crow in cur_list:
-                        if crow["amount"] < max_amount:
-                            msg = f"Multiple uploads check: Another upload/row for this employee received during the same month contains a higher amount ({max_amount}). This row item is flagged to be declined."
-                            raise_flag(crow["sheet_name"], crow["row_idx"], crow["emp_no"], crow["emp_name"], crow["payout_type"], crow["month"], crow["amount"], crow["bank_account"], "MultipleUpload", msg)
+                    if abs(amount - other_amount) > 0.01:
+                        msg = f"Multiple uploads check: Same Employee ID and Payout Month found with different amount ({amount:.2f} vs {other_amount:.2f}) in this file at row {other['row_idx']} in sheet '{other['sheet_name']}'."
+                        raise_flag(crow["sheet_name"], crow["row_idx"], emp_no, crow["emp_name"], crow["payout_type"], month, amount, crow["bank_account"], "DifferentAmount", msg)
+
+            # 2. Compare against other files uploaded in the same calendar month
+            for other in same_month_payouts:
+                if other["emp_no"] == emp_no and other["month"].lower() == month.lower():
+                    other_rating = str(other.get("rating") or "").strip()
+                    other_amount = other["amount"]
+                    
+                    if rating.lower() != other_rating.lower():
+                        msg = f"Multiple uploads check: Same Employee ID and Payout Month found with different rating ('{rating}' vs '{other_rating}') in file '{other['source_file']}' uploaded in the same month (Log ID: {other['source_log_id']})."
+                        raise_flag(crow["sheet_name"], crow["row_idx"], emp_no, crow["emp_name"], crow["payout_type"], month, amount, crow["bank_account"], "DifferentRating", msg)
+                        
+                    if abs(amount - other_amount) > 0.01:
+                        msg = f"Multiple uploads check: Same Employee ID and Payout Month found with different amount ({amount:.2f} vs {other_amount:.2f}) in file '{other['source_file']}' uploaded in the same month (Log ID: {other['source_log_id']})."
+                        raise_flag(crow["sheet_name"], crow["row_idx"], emp_no, crow["emp_name"], crow["payout_type"], month, amount, crow["bank_account"], "DifferentAmount", msg)
+
+            # 3. Compare against approved/merged past payouts of the last 12 rolling months
+            for other in past_payouts:
+                if other["emp_no"] == emp_no and other["month"].lower() == month.lower():
+                    other_rating = str(other.get("rating") or "").strip()
+                    other_amount = other["amount"]
+                    
+                    if rating.lower() != other_rating.lower():
+                        msg = f"Multiple uploads check: Same Employee ID and Payout Month found with different rating ('{rating}' vs '{other_rating}') in past approved file '{other['source_file']}' uploaded on {other['source_date']} (Log ID: {other['source_log_id']})."
+                        raise_flag(crow["sheet_name"], crow["row_idx"], emp_no, crow["emp_name"], crow["payout_type"], month, amount, crow["bank_account"], "DifferentRating", msg)
+                        
+                    if abs(amount - other_amount) > 0.01:
+                        msg = f"Multiple uploads check: Same Employee ID and Payout Month found with different amount ({amount:.2f} vs {other_amount:.2f}) in past approved file '{other['source_file']}' uploaded on {other['source_date']} (Log ID: {other['source_log_id']})."
+                        raise_flag(crow["sheet_name"], crow["row_idx"], emp_no, crow["emp_name"], crow["payout_type"], month, amount, crow["bank_account"], "DifferentAmount", msg)
     except Exception as e:
         import logging
         logging.error(f"Error running Check 3: {e}")
