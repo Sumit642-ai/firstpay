@@ -994,10 +994,18 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 log_id, sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account,
                 flag_type, flag_message, spoc_action, flag_status, flag_reason
             ])
+
+            # Insert into tbl_ETORollingData for future duplicate checks
+            frequency = row.get("frequency") or ""
+            cursor.execute("""
+                INSERT INTO tbl_ETORollingData (
+                    EmpNo, EmployeeName, PayoutMonth, Frequency, Amount, PayoutType, CreatedDate
+                ) VALUES (?, ?, ?, ?, ?, ?, GETDATE())
+            """, [emp_no, emp_name, month, frequency, amount, payout_type])
         conn.commit()
     except Exception as ex:
         import logging
-        logging.error(f"Error inserting validation rows to DB: {ex}")
+        logging.error(f"Error inserting validation/rolling rows to DB: {ex}")
     finally:
         conn.close()
 
