@@ -386,7 +386,6 @@ const ApproverReport: React.FC = () => {
                     <th>Remarks</th>
                     <th>Template</th>
                     <th>Action Replace</th>
-                    <th>Validation Flags</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -447,26 +446,6 @@ const ApproverReport: React.FC = () => {
                               <img src="/assets/images/icons/templateicon.png" alt="" />
                             </button>
                           </div>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-warning btn-sm"
-                            style={{ 
-                              padding: '4px 10px', 
-                              fontSize: '12px', 
-                              fontWeight: '600',
-                              backgroundColor: '#ff8a00', 
-                              color: '#ffffff',
-                              border: 'none', 
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                            }}
-                            onClick={() => openFlagsModal(row.id)}
-                          >
-                            Review Flags
-                          </button>
                         </td>
                       </tr>
                     );
