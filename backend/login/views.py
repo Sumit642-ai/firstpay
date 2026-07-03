@@ -1700,7 +1700,7 @@ def get_upload_flags(request, log_id):
         cursor.execute("""
             SELECT FlagId, SheetName, RowIndex, EmpNo, EmpName, PayoutType, PayoutMonth, Amount, BankAccount, FlagType, FlagMessage, SpocAction, SpocComment
             FROM tbl_UploadRowFlags 
-            WHERE LogId = ?
+            WHERE LogId = ? AND FlagStatus = 'Yes'
             ORDER BY SheetName, RowIndex
         """, [log_id])
         rows = cursor.fetchall()
@@ -1825,4 +1825,97 @@ def get_declined_rows_summary(request, log_id):
         return JsonResponse({"success": False, "message": str(e)}, status=500)
     finally:
         conn.close()
+
+
+@api_view(['GET'])
+def download_flag_details(request, log_id):
+    """
+    Downloads ETO details (both flagged and clean) with flag reasons in an Excel sheet.
+    """
+    import openpyxl
+    conn = get_payroll_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT SheetName, RowIndex, EmpNo, EmpName, PayoutType, PayoutMonth, Amount, BankAccount, FlagStatus, FlagReason
+            FROM tbl_UploadRowFlags
+            WHERE LogId = ?
+            ORDER BY SheetName, RowIndex
+        """, [log_id])
+        rows = cursor.fetchall()
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Validation Report"
+        
+        # Headers
+        headers = ["Sheet Name", "Row Index", "Employee ID", "Employee Name", "Payout Type", "Payout Month", "Amount", "Bank Account", "Flag Status", "Flag Reason"]
+        ws.append(headers)
+        
+        for r in rows:
+            sheet_name = r[0] or ''
+            row_idx = r[1] or 0
+            emp_no = r[2] or ''
+            emp_name = r[3] or ''
+            payout_type = r[4] or ''
+            payout_month = r[5] or ''
+            amount = float(r[6]) if r[6] is not None else 0.0
+            bank_account = r[7] or ''
+            flag_status = r[8] or 'No'
+            flag_reason = r[9] or ''
+            
+            ws.append([sheet_name, row_idx, emp_no, emp_name, payout_type, payout_month, amount, bank_account, flag_status, flag_reason])
+            
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="validation_report_{log_id}.xlsx"'
+        wb.save(response)
+        return response
+    except Exception as e:
+        return HttpResponse(f"Error generating flag report: {str(e)}", status=500)
+    finally:
+        conn.close()
+
+
+@api_view(['GET'])
+def export_logs(request):
+    """
+    Exports dashboard logs for the active tab to Excel.
+    """
+    import openpyxl
+    tab = request.GET.get('tab') or 'payroll'
+    try:
+        data = get_uploaded_files_payload('AdminSelect', request, include_consolidated=True)
+        tab_rows = data.get(tab, [])
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"{tab.capitalize()} Logs"
+        
+        # Headers
+        headers = ["Log ID", "Uploaded By", "Document Type", "Uploaded Date", "Status", "Remarks", "Approver Name", "Approval Date"]
+        ws.append(headers)
+        
+        for r in tab_rows:
+            ws.append([
+                r.get('id', ''),
+                r.get('userId', ''),
+                r.get('documentType', ''),
+                r.get('uploadedDate', ''),
+                r.get('status', ''),
+                r.get('remarks', ''),
+                r.get('approverName', ''),
+                r.get('approvalDate', '')
+            ])
+            
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{tab}_logs_export.xlsx"'
+        wb.save(response)
+        return response
+    except Exception as e:
+        return HttpResponse(f"Error exporting logs: {str(e)}", status=500)
+
 

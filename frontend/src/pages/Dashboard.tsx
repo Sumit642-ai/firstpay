@@ -325,26 +325,9 @@ const Dashboard: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        updateActiveUpload({
-          message: 'success : Request uploaded successfully',
-          file: null,
-          emailFile: null,
-          approver: '',
-          process: '',
-          validationChecklist: null,
-          isValidated: false
-        });
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        if (emailInputRef.current) {
-          emailInputRef.current.value = '';
-        }
-        setStep(1);
-        fetchDashboardData();
-        setTimeout(() => {
-          updateActiveUpload({ message: '' });
-        }, 3000);
+        alert('Request uploaded successfully!');
+        window.location.reload();
+        return;
       } else {
         updateActiveUpload({ message: data.message || 'Upload failed.' });
       }
@@ -748,7 +731,7 @@ const Dashboard: React.FC = () => {
                         <td style={{ padding: '8px 10px' }}>{r.empName}</td>
                         <td style={{ padding: '8px 10px' }}>{r.payoutType}</td>
                         <td style={{ padding: '8px 10px' }}>{r.payoutMonth}</td>
-                        <td style={{ padding: '8px 10px', fontWeight: '500' }}>${r.amount.toFixed(2)}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: '500' }}>{r.amount.toFixed(2)}</td>
                         <td style={{ padding: '8px 10px', color: '#dc2626' }}>{r.reason}</td>
                         <td style={{ padding: '8px 10px', fontStyle: 'italic', color: '#4b5563' }}>{r.spocComment || 'No comment provided'}</td>
                       </tr>

@@ -21,9 +21,13 @@ from .views import (
     get_upload_flags,
     submit_flag_decisions,
     get_declined_rows_summary,
+    download_flag_details,
+    export_logs,
 )
 
 urlpatterns = [
+    path('upload/<int:log_id>/flags/download/', download_flag_details, name='download-flag-details'),
+    path('export-logs/', export_logs, name='export-logs'),
     path('upload/<int:log_id>/flags/', get_upload_flags, name='get-upload-flags'),
     path('upload/<int:log_id>/flags/decide/', submit_flag_decisions, name='submit-flag-decisions'),
     path('upload/<int:log_id>/flags/declined-summary/', get_declined_rows_summary, name='get-declined-rows-summary'),

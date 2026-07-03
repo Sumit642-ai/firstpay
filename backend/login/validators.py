@@ -760,19 +760,21 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
         import logging
         logging.error(f"Error loading employee master names: {e}")
 
-    # Helper function to insert a flag
+    triggered_flags = {}
+
     def raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, payout_month, amount, bank_account, flag_type, flag_message):
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO tbl_UploadRowFlags (
-                    LogId, SheetName, RowIndex, EmpNo, EmpName, PayoutType, PayoutMonth, Amount, BankAccount, FlagType, FlagMessage, SpocAction
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
-            """, [log_id, sheet_name, row_idx, emp_no, emp_name, payout_type, payout_month, amount, bank_account, flag_type, flag_message])
-            conn.commit()
-        except Exception as ex:
-            import logging
-            logging.error(f"Error inserting flag to DB: {ex}")
+        key = (sheet_name, row_idx)
+        if key in triggered_flags:
+            existing = triggered_flags[key]
+            triggered_flags[key] = {
+                'flag_type': f"{existing['flag_type']}, {flag_type}",
+                'flag_message': f"{existing['flag_message']} | {flag_message}"
+            }
+        else:
+            triggered_flags[key] = {
+                'flag_type': flag_type,
+                'flag_message': flag_message
+            }
 
     # Run Checks for each row in current upload
     for row in current_rows:
@@ -863,11 +865,11 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
                 break
         # 4b. Against Employee Master
-        if emp_no in employee_master_names:
-            master_name = employee_master_names[emp_no]
-            if master_name.lower().strip() != emp_name.lower().strip():
-                msg = f"Name check: Name '{emp_name}' does not match Employee Master name '{master_name}'."
-                raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
+        #if emp_no in employee_master_names:
+            # master_name = employee_master_names[emp_no]
+            # if master_name.lower().strip() != emp_name.lower().strip():
+                #msg = f"Name check: Name '{emp_name}' does not match Employee Master name '{master_name}'."
+                #raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
 
     # --- Check 3: Group uploads during the same month (keep highest rating/amount) ---
     try:
@@ -935,6 +937,47 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
     except Exception as e:
         import logging
         logging.error(f"Error running Check 3: {e}")
+
+    # Insert all rows (flagged and clean) into tbl_UploadRowFlags
+    try:
+        cursor = conn.cursor()
+        for row in current_rows:
+            sheet_name = row["sheet_name"]
+            row_idx = row["row_idx"]
+            emp_no = row["emp_no"]
+            emp_name = row["emp_name"]
+            payout_type = row["payout_type"]
+            month = row["month"]
+            amount = row["amount"]
+            bank_account = row["bank_account"]
+            
+            key = (sheet_name, row_idx)
+            if key in triggered_flags:
+                flag_type = triggered_flags[key]['flag_type']
+                flag_message = triggered_flags[key]['flag_message']
+                flag_status = 'Yes'
+                flag_reason = flag_message
+                spoc_action = 'Pending'
+            else:
+                flag_type = ''
+                flag_message = ''
+                flag_status = 'No'
+                flag_reason = ''
+                spoc_action = 'No Action'
+                
+            cursor.execute("""
+                INSERT INTO tbl_UploadRowFlags (
+                    LogId, SheetName, RowIndex, EmpNo, EmpName, PayoutType, PayoutMonth, Amount, BankAccount, 
+                    FlagType, FlagMessage, SpocAction, FlagStatus, FlagReason
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, [
+                log_id, sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account,
+                flag_type, flag_message, spoc_action, flag_status, flag_reason
+            ])
+        conn.commit()
+    except Exception as ex:
+        import logging
+        logging.error(f"Error inserting validation rows to DB: {ex}")
     finally:
         conn.close()
 

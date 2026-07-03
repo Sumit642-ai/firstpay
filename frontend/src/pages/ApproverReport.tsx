@@ -256,17 +256,8 @@ const ApproverReport: React.FC = () => {
       const result = await response.json();
       if (result.success) {
         alert(`${action} successful for ${result.affected} records.`);
-        
-        const newStatus = action === 'approve' ? 'Approver Submit' : 'Approver Reject';
-        setData((prev) => {
-          const newData = { ...prev };
-          const updatedTabRows = newData[activeTab].map(r => 
-            selectedIds.has(r.id) ? { ...r, status: newStatus } : r
-          );
-          newData[activeTab] = updatedTabRows;
-          return newData;
-        });
-        setSelectedIds(new Set());
+        window.location.reload();
+        return;
       } else {
         alert(`Error: ${result.message}`);
       }
@@ -357,9 +348,25 @@ const ApproverReport: React.FC = () => {
           </ul>
 
           <div className="tab-content payroll-tab-content">
-            <div className="admin-action-bar">
+            <div className="admin-action-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <button type="button" onClick={() => handleAction('approve')}>Approve</button>
               <button type="button" onClick={() => handleAction('reject')}>Reject</button>
+              <button 
+                type="button" 
+                onClick={() => handleDownloadFile(`/api/export-logs/?tab=${activeTab}`, `${activeTab}_logs_export.xlsx`)}
+                style={{ 
+                  backgroundColor: '#2563eb', 
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  marginLeft: 'auto'
+                }}
+              >
+                Export to Excel
+              </button>
             </div>
 
             <div className="table-responsive">
@@ -558,8 +565,6 @@ const ApproverReport: React.FC = () => {
                       <th style={{ padding: '10px 12px' }}>Month</th>
                       <th style={{ padding: '10px 12px' }}>Amount</th>
                       <th style={{ padding: '10px 12px' }}>Validation Alert</th>
-                      <th style={{ padding: '10px 12px' }}>SPOC Action</th>
-                      <th style={{ padding: '10px 12px' }}>SPOC Comments</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -573,36 +578,8 @@ const ApproverReport: React.FC = () => {
                           <td style={{ padding: '10px 12px' }}>{f.empName}</td>
                           <td style={{ padding: '10px 12px' }}>{f.payoutType}</td>
                           <td style={{ padding: '10px 12px' }}>{f.payoutMonth}</td>
-                          <td style={{ padding: '10px 12px', fontWeight: '500' }}>${f.amount.toFixed(2)}</td>
+                          <td style={{ padding: '10px 12px', fontWeight: '500' }}>{f.amount.toFixed(2)}</td>
                           <td style={{ padding: '10px 12px', color: '#dc2626', fontSize: '12px', lineHeight: '1.4' }}>{f.flagMessage}</td>
-                          <td style={{ padding: '10px 12px' }}>
-                            <select 
-                              value={dec.action} 
-                              onChange={(e) => handleDecisionChange(f.flagId, e.target.value, dec.comment)}
-                              style={{ 
-                                padding: '6px', 
-                                borderRadius: '4px', 
-                                border: '1px solid #d1d5db',
-                                backgroundColor: dec.action === 'Accepted' ? '#fee2e2' : dec.action === 'Declined' ? '#dcfce7' : '#fff',
-                                color: dec.action === 'Accepted' ? '#991b1b' : dec.action === 'Declined' ? '#166534' : '#374151',
-                                fontWeight: '500',
-                                width: '150px'
-                              }}
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Accepted">Accept (Decline Row)</option>
-                              <option value="Declined">Decline (Allow Exception)</option>
-                            </select>
-                          </td>
-                          <td style={{ padding: '10px 12px' }}>
-                            <input 
-                              type="text" 
-                              value={dec.comment} 
-                              placeholder="Required if decline..."
-                              onChange={(e) => handleDecisionChange(f.flagId, dec.action, e.target.value)}
-                              style={{ width: '100%', padding: '6px 8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
-                            />
-                          </td>
                         </tr>
                       );
                     })}
@@ -611,7 +588,7 @@ const ApproverReport: React.FC = () => {
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #eee', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #eee', paddingTop: '16px', width: '100%' }}>
               <button 
                 type="button" 
                 onClick={() => setModalOpen(false)}
@@ -627,24 +604,22 @@ const ApproverReport: React.FC = () => {
               >
                 Close
               </button>
-              {flags.length > 0 && (
-                <button 
-                  type="button" 
-                  onClick={submitDecisions}
-                  style={{ 
-                    padding: '8px 18px', 
-                    borderRadius: '6px', 
-                    border: 'none', 
-                    background: '#ff8a00', 
-                    color: '#fff', 
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  Submit Decisions
-                </button>
-              )}
+              <button 
+                type="button" 
+                onClick={() => handleDownloadFile(`/api/upload/${selectedLogIdForFlags}/flags/download/`, `validation_report_${selectedLogIdForFlags}.xlsx`)}
+                style={{ 
+                  padding: '8px 18px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  background: '#ff8a00', 
+                  color: '#fff', 
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                Export to Excel
+              </button>
             </div>
           </div>
         </div>

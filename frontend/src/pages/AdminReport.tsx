@@ -124,6 +124,32 @@ const AdminReport: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
+  // SPOC Flags States
+  const [selectedLogIdForFlags, setSelectedLogIdForFlags] = useState<number | null>(null);
+  const [flags, setFlags] = useState<any[]>([]);
+  const [flagsLoading, setFlagsLoading] = useState<boolean>(false);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+
+  const openFlagsModal = (logId: number) => {
+    setSelectedLogIdForFlags(logId);
+    setFlagsLoading(true);
+    setModalOpen(true);
+    fetch(`/api/upload/${logId}/flags/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setFlags(data.flags);
+        } else {
+          alert("Error: " + data.message);
+        }
+        setFlagsLoading(false);
+      })
+      .catch(() => {
+        alert("Failed to fetch flags.");
+        setFlagsLoading(false);
+      });
+  };
+
   const handleTabChange = (tabId: AdminTab) => {
     setActiveTab(tabId);
     setCurrentPage(1);
@@ -186,17 +212,8 @@ const AdminReport: React.FC = () => {
       const result = await response.json();
       if (result.success) {
         alert(`${action} successful for ${result.affected} records.`);
-        
-        const newStatus = action === 'approve' ? 'Approved by Admin' : action === 'reject' ? 'Rejected by Admin' : 'Consolidated';
-        setData((prev) => {
-          const newData = { ...prev };
-          const updatedTabRows = newData[activeTab].map(r => 
-            selectedIds.has(r.id) ? { ...r, status: newStatus } : r
-          );
-          newData[activeTab] = updatedTabRows;
-          return newData;
-        });
-        setSelectedIds(new Set());
+        window.location.reload();
+        return;
       } else {
         alert(`Error: ${result.message}`);
       }
@@ -329,11 +346,27 @@ const AdminReport: React.FC = () => {
           </ul>
 
           <div className="tab-content payroll-tab-content">
-            <div className="admin-action-bar">
+            <div className="admin-action-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <button type="button" onClick={() => handleAction('approve')}>Approve</button>
               <button type="button" onClick={() => handleAction('reject')}>Reject</button>
               <button type="button" className="consolidateBtn" onClick={() => handleAction('consolidate')}>
                 Consolidate
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleDownloadFile(`/api/export-logs/?tab=${activeTab}`, `${activeTab}_logs_export.xlsx`)}
+                style={{ 
+                  backgroundColor: '#2563eb', 
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  marginLeft: 'auto'
+                }}
+              >
+                Export to Excel
               </button>
             </div>
 
@@ -354,6 +387,7 @@ const AdminReport: React.FC = () => {
                     <th>Remarks</th>
                     <th>Template</th>
                     <th>Action Replace</th>
+                    <th>Validation Flags</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -417,12 +451,32 @@ const AdminReport: React.FC = () => {
                             </button>
                           </div>
                         </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-warning btn-sm"
+                            style={{ 
+                              padding: '4px 10px', 
+                              fontSize: '12px', 
+                              fontWeight: '600',
+                              backgroundColor: '#ff8a00', 
+                              color: '#ffffff',
+                              border: 'none', 
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}
+                            onClick={() => openFlagsModal(row.id)}
+                          >
+                            Review Flags
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
                   {activeRows.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="empty-table-cell">
+                      <td colSpan={9} className="empty-table-cell">
                         No uploads found.
                       </td>
                     </tr>
@@ -466,6 +520,111 @@ const AdminReport: React.FC = () => {
           </div>
         </div>
       </div>
+      {modalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex',
+          justifyContent: 'center', alignItems: 'center'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff', width: '85%', maxHeight: '85%',
+            borderRadius: '8px', padding: '24px', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)', overflow: 'hidden',
+            fontFamily: 'Inter, sans-serif'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#111827' }}>
+                SPOC Validation Review - Request #{selectedLogIdForFlags}
+              </h2>
+              <button 
+                type="button" 
+                onClick={() => setModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#9ca3af', fontWeight: 'bold' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div style={{ flexGrow: 1, overflowY: 'auto', marginBottom: '20px' }}>
+              {flagsLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <p style={{ fontSize: '15px' }}>Loading validation flags...</p>
+                </div>
+              ) : flags.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#6b7280', backgroundColor: '#f9fafb', borderRadius: '6px', border: '1px dashed #d1d5db' }}>
+                  <p style={{ fontSize: '15px', fontWeight: '500', margin: 0 }}>No validation flags found for this upload.</p>
+                  <p style={{ fontSize: '13px', margin: '4px 0 0 0', color: '#9ca3af' }}>All backend business logic and duplicate checks passed successfully.</p>
+                </div>
+              ) : (
+                <table className="table table-bordered table-striped" style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '10px 12px' }}>Sheet Name</th>
+                      <th style={{ padding: '10px 12px' }}>Row</th>
+                      <th style={{ padding: '10px 12px' }}>Employee ID</th>
+                      <th style={{ padding: '10px 12px' }}>Name</th>
+                      <th style={{ padding: '10px 12px' }}>Payout Type</th>
+                      <th style={{ padding: '10px 12px' }}>Month</th>
+                      <th style={{ padding: '10px 12px' }}>Amount</th>
+                      <th style={{ padding: '10px 12px' }}>Validation Alert</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flags.map((f) => {
+                      return (
+                        <tr key={f.flagId} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                          <td style={{ padding: '10px 12px', fontWeight: '500' }}>{f.sheetName}</td>
+                          <td style={{ padding: '10px 12px' }}>{f.rowIndex}</td>
+                          <td style={{ padding: '10px 12px' }}>{f.empNo}</td>
+                          <td style={{ padding: '10px 12px' }}>{f.empName}</td>
+                          <td style={{ padding: '10px 12px' }}>{f.payoutType}</td>
+                          <td style={{ padding: '10px 12px' }}>{f.payoutMonth}</td>
+                          <td style={{ padding: '10px 12px', fontWeight: '500' }}>{f.amount.toFixed(2)}</td>
+                          <td style={{ padding: '10px 12px', color: '#dc2626', fontSize: '12px', lineHeight: '1.4' }}>{f.flagMessage}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #eee', paddingTop: '16px', width: '100%' }}>
+               <button 
+                 type="button" 
+                 onClick={() => setModalOpen(false)}
+                 style={{ 
+                   padding: '8px 18px', 
+                   borderRadius: '6px', 
+                   border: '1px solid #d1d5db', 
+                   background: '#fff', 
+                   color: '#374151',
+                   fontWeight: '500',
+                   cursor: 'pointer' 
+                 }}
+               >
+                 Close
+               </button>
+               <button 
+                 type="button" 
+                 onClick={() => handleDownloadFile(`/api/upload/${selectedLogIdForFlags}/flags/download/`, `validation_report_${selectedLogIdForFlags}.xlsx`)}
+                 style={{ 
+                   padding: '8px 18px', 
+                   borderRadius: '6px', 
+                   border: 'none', 
+                   background: '#ff8a00', 
+                   color: '#fff', 
+                   fontWeight: '600',
+                   cursor: 'pointer',
+                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                 }}
+               >
+                 Export to Excel
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
