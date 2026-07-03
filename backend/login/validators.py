@@ -842,6 +842,19 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
             import logging
             logging.error(f"Error calling SP_ValidateETODuplicate for {emp_no}: {sp_err}")
 
+        # --- Check 1c: Duplicate payout check within the current Excel file itself ---
+        for other_row in current_rows:
+            if (other_row["row_idx"] != row_idx and
+                other_row["emp_no"] == emp_no and
+                other_row["month"].lower() == month.lower() and
+                other_row["frequency"].lower() == frequency.lower() and
+                abs(other_row["amount"] - amount) < 0.01 and
+                other_row["payout_type"].lower() == payout_type.lower()):
+                
+                msg = f"Duplicate check: Identical payout duplicate found within this Excel file at row {other_row['row_idx']}."
+                raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "DuplicatePayout", msg)
+                break
+
         # --- Check 2: Same bank account used across multiple Employee IDs ---
         if bank_account and str(bank_account).strip().lower() != "none" and str(bank_account).strip() != "":
             # Check within the current upload
@@ -865,11 +878,18 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
                 break
         # 4b. Against Employee Master
-        #if emp_no in employee_master_names:
-            # master_name = employee_master_names[emp_no]
-            # if master_name.lower().strip() != emp_name.lower().strip():
-                #msg = f"Name check: Name '{emp_name}' does not match Employee Master name '{master_name}'."
-                #raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
+        if emp_no in employee_master_names:
+            master_name = employee_master_names[emp_no]
+            if master_name.lower().strip() != emp_name.lower().strip():
+                msg = f"Name check: Name '{emp_name}' does not match Employee Master name '{master_name}'."
+                raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
+        # 4c. Against past uploads (rolling 12 months)
+        for pr in past_payouts:
+            if pr["emp_no"] == emp_no and pr["emp_name"].lower().strip() != emp_name.lower().strip():
+                msg = f"Name check: Same Employee ID {emp_no} is associated with different employee name '{pr['emp_name']}' in past file '{pr['source_file']}'."
+                raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "NameMismatch", msg)
+                break
+
 
     # --- Check 3: Group uploads during the same month (keep highest rating/amount) ---
     try:
