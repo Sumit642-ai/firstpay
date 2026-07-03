@@ -792,11 +792,9 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
         for pr in past_payouts:
             if (pr["emp_no"] == emp_no and 
                 pr["month"].lower() == month.lower() and 
-                pr["frequency"].lower() == frequency.lower() and 
-                abs(pr["amount"] - amount) < 0.01 and 
                 pr["payout_type"].lower() == payout_type.lower()):
                 
-                msg = f"Duplicate check: Identical payout already approved in file '{pr['source_file']}' uploaded on {pr['source_date']}."
+                msg = f"Duplicate check: Payout for this Employee ID, payout type, and month was already approved in file '{pr['source_file']}' uploaded on {pr['source_date']}."
                 raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "DuplicatePayout", msg)
                 break
 
@@ -847,11 +845,9 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
             if (other_row["row_idx"] != row_idx and
                 other_row["emp_no"] == emp_no and
                 other_row["month"].lower() == month.lower() and
-                other_row["frequency"].lower() == frequency.lower() and
-                abs(other_row["amount"] - amount) < 0.01 and
                 other_row["payout_type"].lower() == payout_type.lower()):
                 
-                msg = f"Duplicate check: Identical payout duplicate found within this Excel file at row {other_row['row_idx']}."
+                msg = f"Duplicate check: Duplicate entry for the same Employee ID, payout type, and month found within this Excel file at row {other_row['row_idx']}."
                 raise_flag(sheet_name, row_idx, emp_no, emp_name, payout_type, month, amount, bank_account, "DuplicatePayout", msg)
                 break
 
