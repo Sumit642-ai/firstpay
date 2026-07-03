@@ -813,7 +813,7 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
                 eto_payout_type = 'IRF'
             elif doc_code == 'TDCT':
                 eto_payout_type = 'TDCT'
-            elif doc_code == 'PRL' and payout_type in ('VP Ratings', 'VP Arrears'):
+            elif doc_code == 'PRL':
                 eto_payout_type = 'PRL'
 
             cursor.execute("""
@@ -1010,12 +1010,20 @@ def analyze_and_generate_flags(log_id, file_path_or_obj, doc_code, user_geo):
             ])
 
             # Insert into tbl_ETORollingData for future duplicate checks
+            eto_payout_type = payout_type
+            if doc_code == 'IRF':
+                eto_payout_type = 'IRF'
+            elif doc_code == 'TDCT':
+                eto_payout_type = 'TDCT'
+            elif doc_code == 'PRL':
+                eto_payout_type = 'PRL'
+
             frequency = row.get("frequency") or ""
             cursor.execute("""
                 INSERT INTO tbl_ETORollingData (
                     EmpNo, EmployeeName, PayoutMonth, Frequency, Amount, PayoutType, CreatedDate
                 ) VALUES (?, ?, ?, ?, ?, ?, GETDATE())
-            """, [emp_no, emp_name, month, frequency, amount, payout_type])
+            """, [emp_no, emp_name, month, frequency, amount, eto_payout_type])
         conn.commit()
     except Exception as ex:
         import logging
