@@ -10,6 +10,7 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   const headers = new Headers(newInit.headers);
   headers.set('ngrok-skip-browser-warning', 'true');
   newInit.headers = headers;
+  newInit.credentials = 'include';
   return originalFetch(input, newInit);
 };
 

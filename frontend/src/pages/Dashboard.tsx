@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Swal from 'sweetalert2';
 
 type UploadTab = 'payroll' | 'irefer' | 'transport';
 
@@ -133,12 +134,22 @@ const Dashboard: React.FC = () => {
         if (data.success) {
           setDeclinedRows(data.declinedRows);
         } else {
-          alert("Error: " + data.message);
+          Swal.fire({
+            title: 'Error',
+            text: data.message,
+            icon: 'error',
+            confirmButtonColor: '#df6014'
+          });
         }
         setDeclinesLoading(false);
       })
       .catch(() => {
-        alert("Failed to fetch declined rows.");
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to fetch declined rows.',
+          icon: 'error',
+          confirmButtonColor: '#df6014'
+        });
         setDeclinesLoading(false);
       });
   };
@@ -209,7 +220,12 @@ const Dashboard: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      alert("Error downloading file: " + (err as Error).message);
+      Swal.fire({
+        title: 'Download Failed',
+        text: (err as Error).message,
+        icon: 'error',
+        confirmButtonColor: '#df6014'
+      });
     }
   };
 
@@ -264,9 +280,14 @@ const Dashboard: React.FC = () => {
       if (!data.success && data.checklist) {
         const failedItems = Object.values(data.checklist)
           .filter((item: any) => item.status === 'fail')
-          .map((item: any) => `${item.label}: ${item.message}`);
+          .map((item: any) => `• ${item.label}: ${item.message}`);
         if (failedItems.length > 0) {
-          alert(`Excel Validation Failed:\n\n${failedItems.join('\n')}`);
+          Swal.fire({
+            title: 'Excel Validation Failed',
+            html: `<div style="text-align: left; font-size: 14px; line-height: 1.5;">Please correct the following errors:<br/><br/>${failedItems.join('<br/>')}</div>`,
+            icon: 'error',
+            confirmButtonColor: '#df6014'
+          });
         }
       }
     } catch (err) {
@@ -325,11 +346,22 @@ const Dashboard: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        alert('Request uploaded successfully!');
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Request uploaded successfully!',
+          icon: 'success',
+          confirmButtonColor: '#df6014'
+        });
         window.location.reload();
         return;
       } else {
         updateActiveUpload({ message: data.message || 'Upload failed.' });
+        Swal.fire({
+          title: 'Upload Failed',
+          text: data.message || 'Upload failed.',
+          icon: 'error',
+          confirmButtonColor: '#df6014'
+        });
       }
     } catch (err) {
       updateActiveUpload({ message: 'Could not connect to submit service.' });
@@ -412,9 +444,19 @@ const Dashboard: React.FC = () => {
                               style={{ cursor: 'pointer' }}
                               onClick={() => {
                                 if (row.remarks) {
-                                  alert(`Remarks:\n${row.remarks}`);
+                                  Swal.fire({
+                                    title: 'Remarks / Comments',
+                                    text: row.remarks,
+                                    icon: 'info',
+                                    confirmButtonColor: '#df6014'
+                                  });
                                 } else {
-                                  alert("No remarks found.");
+                                  Swal.fire({
+                                    title: 'Remarks / Comments',
+                                    text: 'No remarks found.',
+                                    icon: 'info',
+                                    confirmButtonColor: '#df6014'
+                                  });
                                 }
                               }}
                             />

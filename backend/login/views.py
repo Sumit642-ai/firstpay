@@ -3,7 +3,111 @@ import os
 import uuid
 import openpyxl
 import logging
+import re
 from datetime import date, datetime
+
+def shorten_flag_message(msg):
+    if not msg:
+        return ""
+    
+    parts = [p.strip() for p in msg.split('|') if p.strip()]
+    short_parts = []
+    
+    for part in parts:
+        if "rolling ETO database" in part:
+            match = re.search(r"employee ID (\w+)", part)
+            if match:
+                short_parts.append(f"Duplicate: Found in database for ID {match.group(1)}.")
+            else:
+                short_parts.append("Duplicate: Found in database.")
+            continue
+            
+        if "already approved in file" in part:
+            match = re.search(r"file '([^']+)'", part)
+            if match:
+                short_parts.append(f"Duplicate: Approved in '{match.group(1)}'.")
+            else:
+                short_parts.append("Duplicate: Approved in past files.")
+            continue
+            
+        if "within this Excel file at row" in part:
+            match = re.search(r"row (\d+)", part)
+            if match:
+                short_parts.append(f"Duplicate: Repeated at row {match.group(1)}.")
+            else:
+                short_parts.append("Duplicate: Repeated row.")
+            continue
+            
+        if "Bank Account check: Same bank account" in part and "in this file" in part:
+            match = re.search(r"ID: (\w+)", part)
+            if match:
+                short_parts.append(f"Bank: Shared with ID {match.group(1)} in this file.")
+            else:
+                short_parts.append("Bank: Shared with other employee.")
+            continue
+
+        if "Bank Account check: Same bank account" in part and "in file" in part:
+            match = re.search(r"file '([^']+)'", part)
+            if match:
+                short_parts.append(f"Bank: Shared in past file '{match.group(1)}'.")
+            else:
+                short_parts.append("Bank: Shared in past files.")
+            continue
+            
+        if "does not match Employee Master name" in part:
+            match = re.search(r"Employee Master name '([^']+)'", part)
+            if match:
+                short_parts.append(f"Name Mismatch: Master name is '{match.group(1)}'.")
+            else:
+                short_parts.append("Name Mismatch: Doesn't match Employee Master.")
+            continue
+            
+        if "Name check: Same Employee ID" in part and "in this file" in part:
+            short_parts.append("Name Mismatch: Different name in file.")
+            continue
+            
+        if "Name check: Same Employee ID" in part and "past file" in part:
+            match = re.search(r"past file '([^']+)'", part)
+            if match:
+                short_parts.append(f"Name Mismatch: Different name in '{match.group(1)}'.")
+            else:
+                short_parts.append("Name Mismatch: Different name in past files.")
+            continue
+            
+        if "different rating" in part and "sheet" in part:
+            match = re.search(r"row (\d+) in sheet '([^']+)'", part)
+            if match:
+                short_parts.append(f"Conflict: Different rating in sheet '{match.group(2)}' (row {match.group(1)}).")
+            else:
+                short_parts.append("Conflict: Different rating in this file.")
+            continue
+
+        if "different amount" in part and "sheet" in part:
+            match = re.search(r"row (\d+) in sheet '([^']+)'", part)
+            if match:
+                short_parts.append(f"Conflict: Different amount in sheet '{match.group(2)}' (row {match.group(1)}).")
+            else:
+                short_parts.append("Conflict: Different amount in this file.")
+            continue
+
+        if "Multiple uploads check:" in part:
+            if "different rating" in part:
+                short_parts.append("Conflict: Different rating in other file.")
+            elif "different amount" in part:
+                short_parts.append("Conflict: Different amount in other file.")
+            else:
+                short_parts.append("Conflict: Multiple uploads conflict.")
+            continue
+            
+        if len(part) > 60:
+            short_parts.append(part[:57] + "...")
+        else:
+            short_parts.append(part)
+            
+    result = " ".join(short_parts)
+    if len(result) > 90:
+        return short_parts[0]
+    return result
 from pathlib import Path
 
 from django.conf import settings
@@ -284,11 +388,8 @@ def user_can_view_row(item, request):
             return True
         return False
         
-    # 2. Approver (Role 3) can only see: 3, 4
+    # 2. Approver (Role 3) can see all states (don't remove on Stage change)
     if role_id == '3':
-        if state_id not in [3, 4]:
-            return False
-            
         approver_name_db = item.get('approverName') or ''
         if not approver_name_db:
             return False
@@ -1717,7 +1818,7 @@ def get_upload_flags(request, log_id):
                 "amount": float(r[7]) if r[7] is not None else 0.0,
                 "bankAccount": r[8],
                 "flagType": r[9],
-                "flagMessage": r[10],
+                "flagMessage": shorten_flag_message(r[10]),
                 "spocAction": r[11],
                 "spocComment": r[12]
             })
@@ -1862,7 +1963,7 @@ def download_flag_details(request, log_id):
             amount = float(r[6]) if r[6] is not None else 0.0
             bank_account = r[7] or ''
             flag_status = r[8] or 'No'
-            flag_reason = r[9] or ''
+            flag_reason = shorten_flag_message(r[9]) or ''
             
             ws.append([sheet_name, row_idx, emp_no, emp_name, payout_type, payout_month, amount, bank_account, flag_status, flag_reason])
             

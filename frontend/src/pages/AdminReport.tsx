@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import Swal from 'sweetalert2';
 
 type AdminTab = 'payroll' | 'irefer' | 'transport' | 'consolidated';
 
@@ -117,7 +118,12 @@ const AdminReport: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      alert("Error downloading file: " + (err as Error).message);
+      Swal.fire({
+        title: 'Download Failed',
+        text: (err as Error).message,
+        icon: 'error',
+        confirmButtonColor: '#df6014'
+      });
     }
   };
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -140,12 +146,22 @@ const AdminReport: React.FC = () => {
         if (data.success) {
           setFlags(data.flags);
         } else {
-          alert("Error: " + data.message);
+          Swal.fire({
+            title: 'Error',
+            text: data.message,
+            icon: 'error',
+            confirmButtonColor: '#df6014'
+          });
         }
         setFlagsLoading(false);
       })
       .catch(() => {
-        alert("Failed to fetch flags.");
+        Swal.fire({
+          title: 'Error',
+          text: 'Failed to fetch flags.',
+          icon: 'error',
+          confirmButtonColor: '#df6014'
+        });
         setFlagsLoading(false);
       });
   };
@@ -179,17 +195,50 @@ const AdminReport: React.FC = () => {
 
   const handleAction = async (action: 'approve' | 'reject' | 'consolidate') => {
     if (selectedIds.size === 0) {
-      alert('Please select at least one row.');
+      Swal.fire({
+        title: 'No Selection',
+        text: 'Please select at least one row.',
+        icon: 'warning',
+        confirmButtonColor: '#df6014'
+      });
       return;
     }
 
     let comments = '';
     if (action === 'reject') {
-      const reason = prompt('Please enter the reason for rejection:');
+      const { value: reason } = await Swal.fire({
+        title: 'Reject Request',
+        input: 'textarea',
+        inputLabel: 'Please enter the reason for rejection:',
+        inputPlaceholder: 'Type your remarks here...',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Reject',
+        inputValidator: (value) => {
+          if (!value) {
+            return 'You need to write a reason!';
+          }
+        }
+      });
       if (!reason) {
         return; 
       }
       comments = reason;
+    } else {
+      const confirmText = action === 'approve' ? 'approve' : 'consolidate';
+      const confirmResult = await Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to ${confirmText} the selected records?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#df6014',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, proceed!'
+      });
+      if (!confirmResult.isConfirmed) {
+        return;
+      }
     }
 
     const rowsPayload = Array.from(selectedIds).map(id => {
@@ -211,14 +260,29 @@ const AdminReport: React.FC = () => {
       });
       const result = await response.json();
       if (result.success) {
-        alert(`${action} successful for ${result.affected} records.`);
+        await Swal.fire({
+          title: 'Success!',
+          text: `${action.charAt(0).toUpperCase() + action.slice(1)} successful for ${result.affected} records.`,
+          icon: 'success',
+          confirmButtonColor: '#df6014'
+        });
         window.location.reload();
         return;
       } else {
-        alert(`Error: ${result.message}`);
+        Swal.fire({
+          title: 'Action Failed',
+          text: result.message,
+          icon: 'error',
+          confirmButtonColor: '#df6014'
+        });
       }
     } catch (err) {
-      alert(`Could not process ${action} action.`);
+      Swal.fire({
+        title: 'Error',
+        text: `Could not process ${action} action.`,
+        icon: 'error',
+        confirmButtonColor: '#df6014'
+      });
     }
   };
 
@@ -234,9 +298,9 @@ const AdminReport: React.FC = () => {
   const selectableRows = useMemo(() => {
     return paginatedRows.filter((row) => {
       if (activeTab === 'consolidated') {
-        return row.status === 'Merged';
+        return row.status === 'Merged' || row.status === 'Consolidated';
       } else {
-        return row.status === 'Approver Submit' || row.status === 'Approved by Admin';
+        return row.status === 'Approved' || row.status === 'Approved by Admin';
       }
     });
   }, [paginatedRows, activeTab]);
@@ -247,8 +311,8 @@ const AdminReport: React.FC = () => {
       payroll: data.payroll.length,
       irefer: data.irefer.length,
       transport: data.transport.length,
-      pending: allRows.filter((row) => row.status === 'Pending / Review' || row.status === 'Approver Submit').length,
-      rejected: allRows.filter((row) => row.status === 'Rejected by Admin' || row.status === 'Approver Reject').length,
+      pending: allRows.filter((row) => row.status === 'Pending / Review' || row.status === 'Approved').length,
+      rejected: allRows.filter((row) => row.status === 'Rejected by Admin' || row.status === 'Rejected').length,
       consolidated: allRows.filter((row) => row.status === 'Consolidated' || row.status === 'Merged').length,
       approved: allRows.filter((row) => row.status === 'Approved by Admin').length,
     }),
@@ -347,11 +411,6 @@ const AdminReport: React.FC = () => {
 
           <div className="tab-content payroll-tab-content">
             <div className="admin-action-bar" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <button type="button" onClick={() => handleAction('approve')}>Approve</button>
-              <button type="button" onClick={() => handleAction('reject')}>Reject</button>
-              <button type="button" className="consolidateBtn" onClick={() => handleAction('consolidate')}>
-                Consolidate
-              </button>
               <button 
                 type="button" 
                 onClick={() => handleDownloadFile(`/api/export-logs/?tab=${activeTab}`, `${activeTab}_logs_export.xlsx`)}
@@ -386,15 +445,14 @@ const AdminReport: React.FC = () => {
                     <th>Status</th>
                     <th>Remarks</th>
                     <th>Template</th>
-                    <th>Action Replace</th>
                     <th>Validation Flags</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedRows.map((row) => {
                     const isLocked = activeTab === 'consolidated'
-                      ? (row.status !== 'Merged')
-                      : (row.status !== 'Approver Submit' && row.status !== 'Approved by Admin');
+                      ? (row.status !== 'Merged' && row.status !== 'Consolidated')
+                      : (row.status !== 'Approved' && row.status !== 'Approved by Admin');
                     return (
                       <tr className="trChkTickData" key={row.id}>
                         <td>
@@ -423,9 +481,19 @@ const AdminReport: React.FC = () => {
                             style={{ cursor: 'pointer' }}
                             onClick={() => {
                               if (row.remarks) {
-                                alert(`Remarks:\n${row.remarks}`);
+                                Swal.fire({
+                                  title: 'Remarks / Comments',
+                                  text: row.remarks,
+                                  icon: 'info',
+                                  confirmButtonColor: '#df6014'
+                                });
                               } else {
-                                alert("No remarks found.");
+                                Swal.fire({
+                                  title: 'Remarks / Comments',
+                                  text: 'No remarks found.',
+                                  icon: 'info',
+                                  confirmButtonColor: '#df6014'
+                                });
                               }
                             }}
                           />
@@ -443,13 +511,6 @@ const AdminReport: React.FC = () => {
                             <img src="/assets/images/templates/download_orange.png" className="dload" alt="" />
                             <span>Download</span>
                           </button>
-                        </td>
-                        <td>
-                          <div className="replace-actions">
-                            <button disabled={isLocked} title="replace template" type="button">
-                              <img src="/assets/images/icons/templateicon.png" alt="" />
-                            </button>
-                          </div>
                         </td>
                         <td>
                           <button
@@ -476,7 +537,7 @@ const AdminReport: React.FC = () => {
                   })}
                   {activeRows.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="empty-table-cell">
+                      <td colSpan={8} className="empty-table-cell">
                         No uploads found.
                       </td>
                     </tr>
@@ -485,36 +546,49 @@ const AdminReport: React.FC = () => {
               </table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="pagination-bar">
-                <button
-                  className="pagination-btn"
-                  type="button"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                >
-                  &laquo; Prev
-                </button>
-                <div className="pagination-pages">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      className={`pagination-page-btn ${currentPage === pageNum ? 'active' : ''}`}
-                      type="button"
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+            {activeRows.length > 0 && (
+              <div className="admin-bottom-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '12px 20px', background: '#ffffff', borderTop: '1px solid #eaecf0' }}>
+                <div style={{ flexGrow: 1 }}>
+                  {totalPages > 1 && (
+                    <div className="pagination-bar" style={{ borderTop: 'none', padding: 0, margin: 0, background: 'none' }}>
+                      <button
+                        className="pagination-btn"
+                        type="button"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      >
+                        &laquo; Prev
+                      </button>
+                      <div className="pagination-pages">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                          <button
+                            key={pageNum}
+                            className={`pagination-page-btn ${currentPage === pageNum ? 'active' : ''}`}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        className="pagination-btn"
+                        type="button"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      >
+                        Next &raquo;
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <button
-                  className="pagination-btn"
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                >
-                  Next &raquo;
-                </button>
+                <div className="admin-action-bar" style={{ marginBottom: 0, display: 'flex', gap: '10px', alignItems: 'center', marginLeft: '20px' }}>
+                  <button type="button" onClick={() => handleAction('approve')}>Approve</button>
+                  <button type="button" onClick={() => handleAction('reject')}>Reject</button>
+                  <button type="button" className="consolidateBtn" onClick={() => handleAction('consolidate')}>
+                    Consolidate
+                  </button>
+                </div>
               </div>
             )}
           </div>
