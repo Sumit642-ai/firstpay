@@ -18,11 +18,11 @@ import os
 USE_UAT_DB = os.environ.get('USE_UAT_DB', 'False').lower() == 'true'
 
 LOCAL = {
-    'SERVER': os.environ.get('DB_SERVER', r'LAPTOP-14DRA4H6\TEW_SQLEXPRESS'),
+    'SERVER': os.environ.get('DB_SERVER', r'10.104.9.25\dev2008r2edition,1533'),
     'DATABASE': os.environ.get('DB_DATABASE', 'Payroll_Automation'),
-    'USER': os.environ.get('DB_USER', ''),
-    'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-    'TRUSTED_CONNECTION': os.environ.get('DB_TRUSTED_CONNECTION', 'yes'),
+    'USER': os.environ.get('DB_USER', 'devusers'),
+    'PASSWORD': os.environ.get('DB_PASSWORD', r'9h018\%{5J*C[97yBT'),
+    'TRUSTED_CONNECTION': os.environ.get('DB_TRUSTED_CONNECTION', 'no'),
 }
 
 UAT = {
